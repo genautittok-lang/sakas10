@@ -686,12 +686,21 @@ export function startBot() {
         return;
       }
       if (payment.status === "paid") {
-        await bot!.sendMessage(chatId, `\u2705 \u041E\u043F\u043B\u0430\u0442\u0430 \u043F\u0456\u0434\u0442\u0432\u0435\u0440\u0434\u0436\u0435\u043D\u0430!\n\n\u{1F4B0} \u0421\u0443\u043C\u0430: ${payment.amount} \u20B4\n\u{1F3AE} Player ID: ${payment.playerId}`);
+        await bot!.sendMessage(chatId, `\u2705 \u041E\u043F\u043B\u0430\u0442\u0430 \u043F\u0456\u0434\u0442\u0432\u0435\u0440\u0434\u0436\u0435\u043D\u0430!\n\n\u{1F4B0} \u0421\u0443\u043C\u0430: ${payment.amount} \u20B4\n\u{1F3AE} Player ID: ${payment.playerId}`, {
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: "\u{1F4B3} \u041F\u043E\u043F\u043E\u0432\u043D\u0438\u0442\u0438 \u0449\u0435", callback_data: "go_payment" }],
+              [{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }],
+              [{ text: "\u{1F3E0} \u0413\u043E\u043B\u043E\u0432\u043D\u0430", callback_data: "go_home" }],
+            ],
+          },
+        });
       } else if (payment.status === "cancelled") {
         await bot!.sendMessage(chatId, "\u274C \u041E\u043F\u043B\u0430\u0442\u0430 \u0441\u043A\u0430\u0441\u043E\u0432\u0430\u043D\u0430. \u0421\u043F\u0440\u043E\u0431\u0443\u0439\u0442\u0435 \u0437\u043D\u043E\u0432\u0443.", {
           reply_markup: {
             inline_keyboard: [
               [{ text: "\u{1F4B3} \u041F\u043E\u043F\u043E\u0432\u043D\u0438\u0442\u0438", callback_data: "go_payment" }],
+              [{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }],
               [{ text: "\u{1F3E0} \u0413\u043E\u043B\u043E\u0432\u043D\u0430", callback_data: "go_home" }],
             ],
           },
