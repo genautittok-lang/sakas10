@@ -74,7 +74,17 @@ On first run, creates demo users, payments, messages, and default config values 
 ### Bot Configuration (set via Admin Panel after deploy)
 - `manager_chat_id`, `club_id`, payment settings, text content - all configurable in Settings page
 
+## Telegram Admin Panel (for Manager)
+Manager (set via `manager_chat_id` in Settings) has admin commands in Telegram:
+- `/admin` - Admin menu (stats, users, payments, broadcast)
+- `/stats` - Quick statistics
+- Confirm pending payments directly from Telegram
+- Broadcast messages to all users
+- Reply to user messages from Telegram notifications
+
 ## Recent Changes (2026-02-17)
+- Added Telegram admin panel for manager (/admin, /stats, payment confirmation, broadcast)
+- Fixed Step 1 flow: video shown first, then download links as separate message
 - Added messageReplies table for two-way messaging (web panel + Telegram)
 - Fixed all bot strings to proper Ukrainian (removed English "Home" buttons)
 - Added node-telegram-bot-api to production build allowlist
