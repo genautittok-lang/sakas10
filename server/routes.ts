@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { startBot, notifyManagerPayment, sendMessageToUser } from "./bot";
+import { initDatabase } from "./db-init";
 import multer from "multer";
 import path from "path";
 import { randomUUID } from "crypto";
@@ -71,11 +72,12 @@ export async function registerRoutes(
 
   app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
+  await initDatabase();
   startBot();
   try {
     await seedData();
   } catch (e) {
-    console.error("Seed data error (tables may not exist yet):", e);
+    console.error("Seed data error:", e);
   }
 
   app.post("/api/upload", upload.single("file"), (req, res) => {
