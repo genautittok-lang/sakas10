@@ -9,22 +9,15 @@ const FIXED_AMOUNTS = [100, 200, 500, 1000, 2000, 5000];
 
 function getServerBaseUrl(): string {
   const port = process.env.PORT || "5000";
-  
-  // Check PUBLIC_BASE_URL first (highest priority for deployment)
   if (process.env.PUBLIC_BASE_URL) {
     return process.env.PUBLIC_BASE_URL;
   }
-  
-  // Fall back to Replit environment variables
   if (process.env.REPL_SLUG) {
     return `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`;
   }
-  
   if (process.env.REPLIT_DEV_DOMAIN) {
     return `https://${process.env.REPLIT_DEV_DOMAIN}`;
   }
-  
-  // Final fallback to localhost
   return `http://localhost:${port}`;
 }
 
@@ -48,11 +41,12 @@ async function sendManagerNotification(tgId: string, username: string | null, st
     reason,
   });
 
-  const text = `Povidomlennya vid korystuvacha\n\n` +
-    `ID: ${tgId}\n` +
-    `Username: @${username || "nevidomo"}\n` +
-    `Krok: ${step}\n` +
-    `Prychyna: ${reason}`;
+  const text =
+    `\u{1F4E9} Повідомлення від користувача\n\n` +
+    `\u{1F464} ID: ${tgId}\n` +
+    `\u{1F4DD} Username: @${username || "невідомо"}\n` +
+    `\u{1F4CD} Крок: ${step}\n` +
+    `\u{1F4AC} Причина: ${reason}`;
 
   try {
     await bot.sendMessage(managerChatId, text);
@@ -84,15 +78,15 @@ function resolveVideoUrl(videoUrl: string): string {
 
 async function showHome(chatId: number, tgId: string) {
   const welcomeText = await getConfigValue("welcome_text",
-    "Vitayemo! Oberit diyu:");
+    "\u{1F44B} \u0412\u0456\u0442\u0430\u0454\u043C\u043E! \u041E\u0431\u0435\u0440\u0456\u0442\u044C \u0434\u0456\u044E:");
 
   await bot!.sendMessage(chatId, welcomeText, {
     reply_markup: {
       inline_keyboard: [
-        [{ text: "Pochaty", callback_data: "go_step1" }],
-        [{ text: "Popovnyty", callback_data: "go_payment" }],
-        [{ text: "Manager 24/7", callback_data: "manager" }],
-        [{ text: "Pravyla", callback_data: "rules" }],
+        [{ text: "\u25B6\uFE0F \u041F\u043E\u0447\u0430\u0442\u0438", callback_data: "go_step1" }],
+        [{ text: "\u{1F4B3} \u041F\u043E\u043F\u043E\u0432\u043D\u0438\u0442\u0438", callback_data: "go_payment" }],
+        [{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }],
+        [{ text: "\u{1F4CB} \u041F\u0440\u0430\u0432\u0438\u043B\u0430", callback_data: "rules" }],
       ],
     },
   });
@@ -104,29 +98,30 @@ async function showStep1(chatId: number) {
   const iosLink = await getConfigValue("ios_link", "https://example.com/ios");
   const windowsLink = await getConfigValue("windows_link", "https://example.com/windows");
   const step1Text = await getConfigValue("step1_text",
-    "Krok 1: Vstanovit dodatok\n\nOberit vashu platformu ta vstanovit dodatok:");
+    "\u{1F4F1} \u041A\u0440\u043E\u043A 1: \u0412\u0441\u0442\u0430\u043D\u043E\u0432\u0456\u0442\u044C \u0434\u043E\u0434\u0430\u0442\u043E\u043A\n\n\u041E\u0431\u0435\u0440\u0456\u0442\u044C \u0432\u0430\u0448\u0443 \u043F\u043B\u0430\u0442\u0444\u043E\u0440\u043C\u0443 \u0442\u0430 \u0432\u0441\u0442\u0430\u043D\u043E\u0432\u0456\u0442\u044C \u0434\u043E\u0434\u0430\u0442\u043E\u043A:");
 
   if (videoUrl) {
     try {
       const resolvedUrl = resolveVideoUrl(videoUrl);
       await bot!.sendVideo(chatId, resolvedUrl, { caption: step1Text });
-    } catch {
+    } catch (e) {
+      log(`Failed to send step1 video: ${e}`, "bot");
       await bot!.sendMessage(chatId, step1Text);
     }
   } else {
     await bot!.sendMessage(chatId, step1Text);
   }
 
-  await bot!.sendMessage(chatId, "Oberit platformu:", {
+  await bot!.sendMessage(chatId, "\u041E\u0431\u0435\u0440\u0456\u0442\u044C \u043F\u043B\u0430\u0442\u0444\u043E\u0440\u043C\u0443:", {
     reply_markup: {
       inline_keyboard: [
         [
-          { text: "Android", url: androidLink },
-          { text: "iOS", url: iosLink },
-          { text: "Windows", url: windowsLink },
+          { text: "\u{1F916} Android", url: androidLink },
+          { text: "\u{1F34E} iOS", url: iosLink },
+          { text: "\u{1F5A5} Windows", url: windowsLink },
         ],
-        [{ text: "Ya vstanovyv dodatok", callback_data: "installed_app" }],
-        [{ text: "Manager 24/7", callback_data: "manager" }],
+        [{ text: "\u2705 \u042F \u0432\u0441\u0442\u0430\u043D\u043E\u0432\u0438\u0432 \u0434\u043E\u0434\u0430\u0442\u043E\u043A", callback_data: "installed_app" }],
+        [{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }],
       ],
     },
   });
@@ -134,29 +129,30 @@ async function showStep1(chatId: number) {
 
 async function showStep2(chatId: number) {
   const videoUrl = await getConfigValue("step2_video", "");
-  const clubId = await getConfigValue("club_id", "Ne nalashtovano");
+  const clubId = await getConfigValue("club_id", "\u041D\u0435 \u043D\u0430\u043B\u0430\u0448\u0442\u043E\u0432\u0430\u043D\u043E");
   const step2Text = await getConfigValue("step2_text",
-    `Krok 2: Vstup do klubu\n\nClub ID: ${clubId}\n\nZnaydit klub za ID ta pryyednaitesya.`);
+    `\u{1F3E0} \u041A\u0440\u043E\u043A 2: \u0412\u0441\u0442\u0443\u043F \u0434\u043E \u043A\u043B\u0443\u0431\u0443\n\n\u{1F194} Club ID: ${clubId}\n\n\u0417\u043D\u0430\u0439\u0434\u0456\u0442\u044C \u043A\u043B\u0443\u0431 \u0437\u0430 ID \u0442\u0430 \u043F\u0440\u0438\u0454\u0434\u043D\u0430\u0439\u0442\u0435\u0441\u044F.`);
 
-  const text = step2Text.includes("Club ID") ? step2Text : `${step2Text}\n\nClub ID: ${clubId}`;
+  const text = step2Text.includes("Club ID") ? step2Text : `${step2Text}\n\n\u{1F194} Club ID: ${clubId}`;
 
   if (videoUrl) {
     try {
       const resolvedUrl = resolveVideoUrl(videoUrl);
       await bot!.sendVideo(chatId, resolvedUrl, { caption: text });
-    } catch {
+    } catch (e) {
+      log(`Failed to send step2 video: ${e}`, "bot");
       await bot!.sendMessage(chatId, text);
     }
   } else {
     await bot!.sendMessage(chatId, text);
   }
 
-  await bot!.sendMessage(chatId, "Oberit diyu:", {
+  await bot!.sendMessage(chatId, "\u041E\u0431\u0435\u0440\u0456\u0442\u044C \u0434\u0456\u044E:", {
     reply_markup: {
       inline_keyboard: [
-        [{ text: "Ya v klubi", callback_data: "joined_club" }],
-        [{ text: "Ne znayshov klub", callback_data: "club_not_found" }],
-        [{ text: "Manager 24/7", callback_data: "manager" }],
+        [{ text: "\u2705 \u042F \u0432 \u043A\u043B\u0443\u0431\u0456", callback_data: "joined_club" }],
+        [{ text: "\u274C \u041D\u0435 \u0437\u043D\u0430\u0439\u0448\u043E\u0432 \u043A\u043B\u0443\u0431", callback_data: "club_not_found" }],
+        [{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }],
       ],
     },
   });
@@ -164,29 +160,29 @@ async function showStep2(chatId: number) {
 
 async function showStep3(chatId: number) {
   const bonusText = await getConfigValue("bonus_text",
-    "Krok 3: Bonus\n\nVitayemo! Vy mozhete otrymaty bonus za reyestraciyu ta vstup do klubu.\n\nNatysnit knopku nyzhche shchob zabraty bonus.");
+    "\u{1F381} \u041A\u0440\u043E\u043A 3: \u0411\u043E\u043D\u0443\u0441\n\n\u0412\u0456\u0442\u0430\u0454\u043C\u043E! \u0412\u0438 \u043C\u043E\u0436\u0435\u0442\u0435 \u043E\u0442\u0440\u0438\u043C\u0430\u0442\u0438 \u0431\u043E\u043D\u0443\u0441 \u0437\u0430 \u0440\u0435\u0454\u0441\u0442\u0440\u0430\u0446\u0456\u044E \u0442\u0430 \u0432\u0441\u0442\u0443\u043F \u0434\u043E \u043A\u043B\u0443\u0431\u0443.\n\n\u041D\u0430\u0442\u0438\u0441\u043D\u0456\u0442\u044C \u043A\u043D\u043E\u043F\u043A\u0443 \u043D\u0438\u0436\u0447\u0435 \u0449\u043E\u0431 \u0437\u0430\u0431\u0440\u0430\u0442\u0438 \u0431\u043E\u043D\u0443\u0441.");
 
   await bot!.sendMessage(chatId, bonusText, {
     reply_markup: {
       inline_keyboard: [
-        [{ text: "Zabraty bonus", callback_data: "claim_bonus" }],
-        [{ text: "Popovnyty", callback_data: "go_payment" }],
-        [{ text: "Manager 24/7", callback_data: "manager" }],
-        [{ text: "Pravyla", callback_data: "rules" }, { text: "Home", callback_data: "go_home" }],
+        [{ text: "\u{1F381} \u0417\u0430\u0431\u0440\u0430\u0442\u0438 \u0431\u043E\u043D\u0443\u0441", callback_data: "claim_bonus" }],
+        [{ text: "\u{1F4B3} \u041F\u043E\u043F\u043E\u0432\u043D\u0438\u0442\u0438", callback_data: "go_payment" }],
+        [{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }],
+        [{ text: "\u{1F4CB} \u041F\u0440\u0430\u0432\u0438\u043B\u0430", callback_data: "rules" }, { text: "\u{1F3E0} Home", callback_data: "go_home" }],
       ],
     },
   });
 }
 
 async function showPaymentStep1(chatId: number) {
-  await bot!.sendMessage(chatId, "Oberit sumu popovnennya:", {
+  await bot!.sendMessage(chatId, "\u{1F4B3} \u041E\u0431\u0435\u0440\u0456\u0442\u044C \u0441\u0443\u043C\u0443 \u043F\u043E\u043F\u043E\u0432\u043D\u0435\u043D\u043D\u044F:", {
     reply_markup: {
       inline_keyboard: [
-        FIXED_AMOUNTS.slice(0, 3).map(a => ({ text: `${a} UAH`, callback_data: `amount_${a}` })),
-        FIXED_AMOUNTS.slice(3).map(a => ({ text: `${a} UAH`, callback_data: `amount_${a}` })),
-        [{ text: "Vvesty vruchnu", callback_data: "custom_amount" }],
-        [{ text: "Manager 24/7", callback_data: "manager" }],
-        [{ text: "Home", callback_data: "go_home" }],
+        FIXED_AMOUNTS.slice(0, 3).map(a => ({ text: `${a} \u20B4`, callback_data: `amount_${a}` })),
+        FIXED_AMOUNTS.slice(3).map(a => ({ text: `${a} \u20B4`, callback_data: `amount_${a}` })),
+        [{ text: "\u270F\uFE0F \u0412\u0432\u0435\u0441\u0442\u0438 \u0432\u0440\u0443\u0447\u043D\u0443", callback_data: "custom_amount" }],
+        [{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }],
+        [{ text: "\u{1F3E0} Home", callback_data: "go_home" }],
       ],
     },
   });
@@ -194,7 +190,7 @@ async function showPaymentStep1(chatId: number) {
 
 async function showPaymentStep2(chatId: number, amount: number) {
   await bot!.sendMessage(chatId,
-    `Suma: ${amount} UAH\n\nVvedit vash Player ID:`);
+    `\u{1F4B0} \u0421\u0443\u043C\u0430: ${amount} \u20B4\n\n\u{1F4DD} \u0412\u0432\u0435\u0434\u0456\u0442\u044C \u0432\u0430\u0448 Player ID:`);
 }
 
 async function createConvert2payPayment(amount: number, playerId: string, paymentId: string): Promise<string | null> {
@@ -237,31 +233,44 @@ async function createConvert2payPayment(amount: number, playerId: string, paymen
   }
 }
 
-async function showPaymentStep3(chatId: number, amount: number, playerId: string, paymentId: string) {
+async function showPaymentStep3(chatId: number, amount: number, playerId: string, paymentId: string, tgId: string, username: string | null) {
   let payLink = await createConvert2payPayment(amount, playerId, paymentId);
 
   if (!payLink) {
     const paymentLink = await getConfigValue("payment_link_template", "");
-    payLink = paymentLink
-      .replace("{amount}", String(amount))
-      .replace("{player_id}", playerId)
-      .replace("{payment_id}", paymentId);
-
-    if (!payLink) {
-      payLink = `https://example.com/pay?amount=${amount}&id=${paymentId}`;
+    if (paymentLink) {
+      payLink = paymentLink
+        .replace("{amount}", String(amount))
+        .replace("{player_id}", playerId)
+        .replace("{payment_id}", paymentId);
     }
   }
 
-  const buttons: any[][] = [
-    [{ text: "Oplatyty", url: payLink }],
-    [{ text: "Pereviryty oplatu", callback_data: `check_payment_${paymentId}` }],
-    [{ text: "Manager 24/7", callback_data: "manager" }],
-    [{ text: "Home", callback_data: "go_home" }],
-  ];
+  if (!payLink) {
+    await bot!.sendMessage(chatId,
+      `\u{1F4B3} \u041E\u043F\u043B\u0430\u0442\u0430\n\n\u{1F4B0} \u0421\u0443\u043C\u0430: ${amount} \u20B4\n\u{1F3AE} Player ID: ${playerId}\n\n\u26A0\uFE0F \u0421\u0438\u0441\u0442\u0435\u043C\u0430 \u043E\u043F\u043B\u0430\u0442\u0438 \u0449\u0435 \u043D\u0430\u043B\u0430\u0448\u0442\u043E\u0432\u0443\u0454\u0442\u044C\u0441\u044F.\n\u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 \u0437\u0432'\u044F\u0436\u0435\u0442\u044C\u0441\u044F \u0437 \u0432\u0430\u043C\u0438 \u0434\u043B\u044F \u043E\u043F\u043B\u0430\u0442\u0438.`, {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: "\u{1F504} \u041F\u0435\u0440\u0435\u0432\u0456\u0440\u0438\u0442\u0438 \u043E\u043F\u043B\u0430\u0442\u0443", callback_data: `check_payment_${paymentId}` }],
+          [{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }],
+          [{ text: "\u{1F3E0} Home", callback_data: "go_home" }],
+        ],
+      },
+    });
+    await sendManagerNotification(tgId, username, "PAYMENT", `\u0417\u0430\u043F\u0438\u0442 \u043D\u0430 \u043E\u043F\u043B\u0430\u0442\u0443: ${amount} \u20B4, Player ID: ${playerId}`);
+    return;
+  }
 
   await bot!.sendMessage(chatId,
-    `Oplata\n\nSuma: ${amount} UAH\nPlayer ID: ${playerId}\n\nNatysnit knopku nyzhche dlya oplaty:`, {
-    reply_markup: { inline_keyboard: buttons },
+    `\u{1F4B3} \u041E\u043F\u043B\u0430\u0442\u0430\n\n\u{1F4B0} \u0421\u0443\u043C\u0430: ${amount} \u20B4\n\u{1F3AE} Player ID: ${playerId}\n\n\u041D\u0430\u0442\u0438\u0441\u043D\u0456\u0442\u044C \u043A\u043D\u043E\u043F\u043A\u0443 \u043D\u0438\u0436\u0447\u0435 \u0434\u043B\u044F \u043E\u043F\u043B\u0430\u0442\u0438:`, {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: "\u{1F4B3} \u041E\u043F\u043B\u0430\u0442\u0438\u0442\u0438", url: payLink }],
+        [{ text: "\u{1F504} \u041F\u0435\u0440\u0435\u0432\u0456\u0440\u0438\u0442\u0438 \u043E\u043F\u043B\u0430\u0442\u0443", callback_data: `check_payment_${paymentId}` }],
+        [{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }],
+        [{ text: "\u{1F3E0} Home", callback_data: "go_home" }],
+      ],
+    },
   });
 }
 
@@ -280,8 +289,8 @@ export function startBot() {
     const tgId = String(msg.from?.id);
     const username = msg.from?.username;
 
-    const user = await ensureUser(tgId, username);
-    await storage.updateBotUser(tgId, { currentStep: "HOME" });
+    await ensureUser(tgId, username);
+    await storage.updateBotUser(tgId, { currentStep: "HOME", paymentSubStep: null, paymentAmount: null, paymentPlayerId: null });
     await showHome(chatId, tgId);
   });
 
@@ -297,18 +306,18 @@ export function startBot() {
     const user = await ensureUser(tgId, username || undefined);
 
     if (data === "manager") {
-      await bot!.sendMessage(chatId, "Manager skoro napyshe vam. Ochikuite!");
-      await sendManagerNotification(tgId, username, user.currentStep, "Zapyt managera 24/7");
+      await bot!.sendMessage(chatId, "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 \u0441\u043A\u043E\u0440\u043E \u043D\u0430\u043F\u0438\u0448\u0435 \u0432\u0430\u043C. \u041E\u0447\u0456\u043A\u0443\u0439\u0442\u0435!");
+      await sendManagerNotification(tgId, username, user.currentStep, "\u0417\u0430\u043F\u0438\u0442 \u043C\u0435\u043D\u0435\u0434\u0436\u0435\u0440\u0430 24/7");
       return;
     }
 
     if (data === "rules") {
       const rulesText = await getConfigValue("rules_text",
-        "Pravyla:\n\n1. Vstanovit dodatok\n2. Vstupity do klubu\n3. Otrymayty bonus\n4. Popovnyuity rakhunok");
+        "\u{1F4CB} \u041F\u0440\u0430\u0432\u0438\u043B\u0430:\n\n1. \u0412\u0441\u0442\u0430\u043D\u043E\u0432\u0456\u0442\u044C \u0434\u043E\u0434\u0430\u0442\u043E\u043A\n2. \u0412\u0441\u0442\u0443\u043F\u0456\u0442\u044C \u0434\u043E \u043A\u043B\u0443\u0431\u0443\n3. \u041E\u0442\u0440\u0438\u043C\u0430\u0439\u0442\u0435 \u0431\u043E\u043D\u0443\u0441\n4. \u041F\u043E\u043F\u043E\u0432\u043D\u044E\u0439\u0442\u0435 \u0440\u0430\u0445\u0443\u043D\u043E\u043A");
       await bot!.sendMessage(chatId, rulesText, {
         reply_markup: {
           inline_keyboard: [
-            [{ text: "Home", callback_data: "go_home" }],
+            [{ text: "\u{1F3E0} Home", callback_data: "go_home" }],
           ],
         },
       });
@@ -344,15 +353,15 @@ export function startBot() {
     }
 
     if (data === "club_not_found") {
-      await bot!.sendMessage(chatId, "Manager dopomozhe vam znayty klub. Ochikuite!");
-      await sendManagerNotification(tgId, username, user.currentStep, "Ne znayshov klub");
+      await bot!.sendMessage(chatId, "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 \u0434\u043E\u043F\u043E\u043C\u043E\u0436\u0435 \u0432\u0430\u043C \u0437\u043D\u0430\u0439\u0442\u0438 \u043A\u043B\u0443\u0431. \u041E\u0447\u0456\u043A\u0443\u0439\u0442\u0435!");
+      await sendManagerNotification(tgId, username, user.currentStep, "\u041D\u0435 \u0437\u043D\u0430\u0439\u0448\u043E\u0432 \u043A\u043B\u0443\u0431");
       return;
     }
 
     if (data === "claim_bonus") {
       await storage.updateBotUser(tgId, { claimedBonus: true });
-      await bot!.sendMessage(chatId, "Vash zapyt na bonus pryynyato! Manager zv'yazhetsya z vamy.");
-      await sendManagerNotification(tgId, username, user.currentStep, "Zapyt na bonus");
+      await bot!.sendMessage(chatId, "\u{1F381} \u0412\u0430\u0448 \u0437\u0430\u043F\u0438\u0442 \u043D\u0430 \u0431\u043E\u043D\u0443\u0441 \u043F\u0440\u0438\u0439\u043D\u044F\u0442\u043E! \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 \u0437\u0432'\u044F\u0436\u0435\u0442\u044C\u0441\u044F \u0437 \u0432\u0430\u043C\u0438.");
+      await sendManagerNotification(tgId, username, user.currentStep, "\u0417\u0430\u043F\u0438\u0442 \u043D\u0430 \u0431\u043E\u043D\u0443\u0441");
       return;
     }
 
@@ -371,7 +380,7 @@ export function startBot() {
 
     if (data === "custom_amount") {
       await storage.updateBotUser(tgId, { paymentSubStep: "custom_amount" });
-      await bot!.sendMessage(chatId, "Vvedit sumu popovnennya (chyslo):");
+      await bot!.sendMessage(chatId, "\u270F\uFE0F \u0412\u0432\u0435\u0434\u0456\u0442\u044C \u0441\u0443\u043C\u0443 \u043F\u043E\u043F\u043E\u0432\u043D\u0435\u043D\u043D\u044F (\u0447\u0438\u0441\u043B\u043E):");
       return;
     }
 
@@ -379,26 +388,26 @@ export function startBot() {
       const paymentId = data.replace("check_payment_", "");
       const payment = await storage.getPayment(paymentId);
       if (!payment) {
-        await bot!.sendMessage(chatId, "Platizh ne znaydeno");
+        await bot!.sendMessage(chatId, "\u274C \u041F\u043B\u0430\u0442\u0456\u0436 \u043D\u0435 \u0437\u043D\u0430\u0439\u0434\u0435\u043D\u043E");
         return;
       }
       if (payment.status === "paid") {
-        await bot!.sendMessage(chatId, `Oplata pidtverdzhena!\n\nSuma: ${payment.amount} UAH\nPlayer ID: ${payment.playerId}`);
+        await bot!.sendMessage(chatId, `\u2705 \u041E\u043F\u043B\u0430\u0442\u0430 \u043F\u0456\u0434\u0442\u0432\u0435\u0440\u0434\u0436\u0435\u043D\u0430!\n\n\u{1F4B0} \u0421\u0443\u043C\u0430: ${payment.amount} \u20B4\n\u{1F3AE} Player ID: ${payment.playerId}`);
       } else if (payment.status === "cancelled") {
-        await bot!.sendMessage(chatId, "Oplata skasovana. Sprobuyte znovu.", {
+        await bot!.sendMessage(chatId, "\u274C \u041E\u043F\u043B\u0430\u0442\u0430 \u0441\u043A\u0430\u0441\u043E\u0432\u0430\u043D\u0430. \u0421\u043F\u0440\u043E\u0431\u0443\u0439\u0442\u0435 \u0437\u043D\u043E\u0432\u0443.", {
           reply_markup: {
             inline_keyboard: [
-              [{ text: "Popovnyty", callback_data: "go_payment" }],
-              [{ text: "Home", callback_data: "go_home" }],
+              [{ text: "\u{1F4B3} \u041F\u043E\u043F\u043E\u0432\u043D\u0438\u0442\u0438", callback_data: "go_payment" }],
+              [{ text: "\u{1F3E0} Home", callback_data: "go_home" }],
             ],
           },
         });
       } else {
-        await bot!.sendMessage(chatId, "Oplata v obrobci. Sprobuyte pereviryty piznishe.", {
+        await bot!.sendMessage(chatId, "\u23F3 \u041E\u043F\u043B\u0430\u0442\u0430 \u0432 \u043E\u0431\u0440\u043E\u0431\u0446\u0456. \u0421\u043F\u0440\u043E\u0431\u0443\u0439\u0442\u0435 \u043F\u0435\u0440\u0435\u0432\u0456\u0440\u0438\u0442\u0438 \u043F\u0456\u0437\u043D\u0456\u0448\u0435.", {
           reply_markup: {
             inline_keyboard: [
-              [{ text: "Pereviryty shche raz", callback_data: `check_payment_${paymentId}` }],
-              [{ text: "Manager 24/7", callback_data: "manager" }],
+              [{ text: "\u{1F504} \u041F\u0435\u0440\u0435\u0432\u0456\u0440\u0438\u0442\u0438 \u0449\u0435 \u0440\u0430\u0437", callback_data: `check_payment_${paymentId}` }],
+              [{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }],
             ],
           },
         });
@@ -419,7 +428,7 @@ export function startBot() {
     if (user.currentStep === "PAYMENT" && user.paymentSubStep === "custom_amount") {
       const amount = parseInt(msg.text || "");
       if (isNaN(amount) || amount <= 0) {
-        await bot!.sendMessage(chatId, "Vvedit korektnu sumu (pozytyvne chyslo):");
+        await bot!.sendMessage(chatId, "\u274C \u0412\u0432\u0435\u0434\u0456\u0442\u044C \u043A\u043E\u0440\u0435\u043A\u0442\u043D\u0443 \u0441\u0443\u043C\u0443 (\u043F\u043E\u0437\u0438\u0442\u0438\u0432\u043D\u0435 \u0447\u0438\u0441\u043B\u043E):");
         return;
       }
       await storage.updateBotUser(tgId, { paymentAmount: amount, paymentSubStep: "player_id" });
@@ -430,7 +439,7 @@ export function startBot() {
     if (user.currentStep === "PAYMENT" && user.paymentSubStep === "player_id") {
       const playerId = msg.text?.trim() || "";
       if (!playerId) {
-        await bot!.sendMessage(chatId, "Vvedit korektnyy Player ID:");
+        await bot!.sendMessage(chatId, "\u274C \u0412\u0432\u0435\u0434\u0456\u0442\u044C \u043A\u043E\u0440\u0435\u043A\u0442\u043D\u0438\u0439 Player ID:");
         return;
       }
 
@@ -448,7 +457,7 @@ export function startBot() {
         paymentSubStep: "pay",
       });
 
-      await showPaymentStep3(chatId, amount, playerId, payment.id);
+      await showPaymentStep3(chatId, amount, playerId, payment.id, tgId, msg.from?.username || null);
       return;
     }
   });
@@ -465,11 +474,12 @@ export async function notifyManagerPayment(tgId: string, username: string | null
   const managerChatId = await storage.getConfig("manager_chat_id");
   if (!managerChatId) return;
 
-  const text = `Oplata pidtverdzhena!\n\n` +
-    `ID: ${tgId}\n` +
-    `Username: @${username || "nevidomo"}\n` +
-    `Suma: ${amount} UAH\n` +
-    `Player ID: ${playerId}`;
+  const text =
+    `\u2705 \u041E\u043F\u043B\u0430\u0442\u0430 \u043F\u0456\u0434\u0442\u0432\u0435\u0440\u0434\u0436\u0435\u043D\u0430!\n\n` +
+    `\u{1F464} ID: ${tgId}\n` +
+    `\u{1F4DD} Username: @${username || "\u043D\u0435\u0432\u0456\u0434\u043E\u043C\u043E"}\n` +
+    `\u{1F4B0} \u0421\u0443\u043C\u0430: ${amount} \u20B4\n` +
+    `\u{1F3AE} Player ID: ${playerId}`;
 
   try {
     await bot.sendMessage(managerChatId, text);

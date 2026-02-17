@@ -106,11 +106,11 @@ export async function registerRoutes(
     if (status === "paid") {
       const user = await storage.getBotUser(payment.tgId);
       await sendMessageToUser(payment.tgId,
-        `Оплата підтверджена!\n\nСума: ${payment.amount} грн\nPlayer ID: ${payment.playerId}`);
+        `\u2705 \u041E\u043F\u043B\u0430\u0442\u0430 \u043F\u0456\u0434\u0442\u0432\u0435\u0440\u0434\u0436\u0435\u043D\u0430!\n\n\u{1F4B0} \u0421\u0443\u043C\u0430: ${payment.amount} \u20B4\n\u{1F3AE} Player ID: ${payment.playerId}`);
       await notifyManagerPayment(payment.tgId, user?.username || null, payment.amount, payment.playerId);
     } else if (status === "cancelled") {
       await sendMessageToUser(payment.tgId,
-        `Оплата скасована.\n\nВикористайте /start щоб повернутись на головну.`);
+        `\u274C \u041E\u043F\u043B\u0430\u0442\u0430 \u0441\u043A\u0430\u0441\u043E\u0432\u0430\u043D\u0430.\n\n\u0412\u0438\u043A\u043E\u0440\u0438\u0441\u0442\u0430\u0439\u0442\u0435 /start \u0449\u043E\u0431 \u043F\u043E\u0432\u0435\u0440\u043D\u0443\u0442\u0438\u0441\u044C \u043D\u0430 \u0433\u043E\u043B\u043E\u0432\u043D\u0443.`);
     }
 
     res.json(payment);
@@ -118,7 +118,6 @@ export async function registerRoutes(
 
   app.post("/api/payments/webhook", async (req, res) => {
     try {
-      // Webhook security verification
       const secretFromHeader = req.get("X-Webhook-Secret");
       const secretFromQuery = req.query.secret as string | undefined;
       const providedSecret = secretFromHeader || secretFromQuery;
@@ -132,7 +131,7 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Invalid webhook secret" });
       }
 
-      const { payment_id, invoice_id, status: webhookStatus, amount } = req.body;
+      const { payment_id, invoice_id, status: webhookStatus } = req.body;
 
       let payment = null;
       if (payment_id) {
@@ -159,11 +158,11 @@ export async function registerRoutes(
       if (newStatus === "paid" && updated) {
         const user = await storage.getBotUser(updated.tgId);
         await sendMessageToUser(updated.tgId,
-          `Оплата підтверджена!\n\nСума: ${updated.amount} грн\nPlayer ID: ${updated.playerId}`);
+          `\u2705 \u041E\u043F\u043B\u0430\u0442\u0430 \u043F\u0456\u0434\u0442\u0432\u0435\u0440\u0434\u0436\u0435\u043D\u0430!\n\n\u{1F4B0} \u0421\u0443\u043C\u0430: ${updated.amount} \u20B4\n\u{1F3AE} Player ID: ${updated.playerId}`);
         await notifyManagerPayment(updated.tgId, user?.username || null, updated.amount, updated.playerId);
       } else if (newStatus === "cancelled" && updated) {
         await sendMessageToUser(updated.tgId,
-          `Оплата скасована.\n\nВикористайте /start щоб повернутись на головну.`);
+          `\u274C \u041E\u043F\u043B\u0430\u0442\u0430 \u0441\u043A\u0430\u0441\u043E\u0432\u0430\u043D\u0430.\n\n\u0412\u0438\u043A\u043E\u0440\u0438\u0441\u0442\u0430\u0439\u0442\u0435 /start \u0449\u043E\u0431 \u043F\u043E\u0432\u0435\u0440\u043D\u0443\u0442\u0438\u0441\u044C \u043D\u0430 \u0433\u043E\u043B\u043E\u0432\u043D\u0443.`);
       }
 
       res.json({ success: true });

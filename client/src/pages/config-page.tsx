@@ -31,7 +31,6 @@ const CONFIG_FIELDS: ConfigField[] = [
   { key: "android_link", label: "Посилання Android", description: "URL для завантаження на Android", type: "url", placeholder: "https://play.google.com/..." },
   { key: "ios_link", label: "Посилання iOS", description: "URL для завантаження на iOS", type: "url", placeholder: "https://apps.apple.com/..." },
   { key: "windows_link", label: "Посилання Windows", description: "URL для завантаження на Windows", type: "url", placeholder: "https://example.com/download" },
-  { key: "payment_link_template", label: "Шаблон посилання оплати", description: "Використовуйте {amount}, {player_id}, {payment_id}", type: "url", placeholder: "https://pay.example.com/?amount={amount}&pid={player_id}&id={payment_id}" },
   { key: "convert2pay_api_url", label: "Convert2pay API URL", description: "URL ендпоінту Convert2pay API", type: "url", placeholder: "https://api.convert2pay.com/v1/payment" },
   { key: "convert2pay_merchant_id", label: "Convert2pay Merchant ID", description: "Ідентифікатор мерчанта Convert2pay", type: "text", placeholder: "merchant_123" },
   { key: "convert2pay_secret_key", label: "Convert2pay Secret Key", description: "Секретний ключ API Convert2pay", type: "text", placeholder: "sk_live_..." },
