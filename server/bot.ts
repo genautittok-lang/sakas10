@@ -59,19 +59,19 @@ function translatePaymentStatus(status: string): string {
 }
 
 async function sendManagerNotification(tgId: string, username: string | null, step: string, reason: string) {
-  if (!bot) return;
-  const managerChatId = await getConfigValue("manager_chat_id", "");
-  if (!managerChatId) {
-    log("Manager chat ID not configured", "bot");
-    return;
-  }
-
   const msg = await storage.createManagerMessage({
     tgId,
     username: username || undefined,
     userStep: step,
     reason,
   });
+
+  if (!bot) return;
+  const managerChatId = await getConfigValue("manager_chat_id", "");
+  if (!managerChatId) {
+    log("Manager chat ID not configured, message saved to web panel only", "bot");
+    return;
+  }
 
   const text =
     `\u{1F4E9} Повідомлення від користувача\n\n` +
@@ -81,7 +81,7 @@ async function sendManagerNotification(tgId: string, username: string | null, st
     `\u{1F4AC} Причина: ${reason}`;
 
   try {
-    const sent = await bot.sendMessage(managerChatId, text, {
+    await bot.sendMessage(managerChatId, text, {
       reply_markup: {
         inline_keyboard: [
           [{ text: "\u270F\uFE0F \u0412\u0456\u0434\u043F\u043E\u0432\u0456\u0441\u0442\u0438", callback_data: `reply_to_${msg.id}_${tgId}` }],
