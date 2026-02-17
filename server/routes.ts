@@ -41,28 +41,24 @@ const upload = multer({
   },
 });
 
-async function seedData() {
-  const userCount = await storage.countBotUsers();
-  if (userCount > 0) return;
+async function seedDefaults() {
+  const configs = await storage.getAllConfig();
+  const existingKeys = new Set(configs.map((c: any) => c.key));
 
-  await storage.createBotUser({ tgId: "100001", username: "demo_user1", currentStep: "HOME" });
-  await storage.createBotUser({ tgId: "100002", username: "demo_user2", currentStep: "STEP_1" });
-  await storage.createBotUser({ tgId: "100003", username: "demo_user3", currentStep: "STEP_2", claimedBonus: false });
-  await storage.createBotUser({ tgId: "100004", username: "demo_user4", currentStep: "PAYMENT", claimedBonus: true });
+  const defaults: Record<string, string> = {
+    club_id: "CLUB777",
+    welcome_text: "Ласкаво просимо до нашого клубу! Оберіть дію:",
+    step1_text: "Крок 1: Встановіть додаток\n\nОберіть вашу платформу та встановіть додаток:",
+    step2_text: "Крок 2: Вступ до клубу\n\nЗнайдіть клуб за ID та приєднайтесь.",
+    bonus_text: "Крок 3: Бонус\n\nВітаємо! Ви можете отримати бонус за реєстрацію.",
+    payment_amounts: "100, 200, 500, 1000, 2000, 5000",
+  };
 
-  await storage.createPayment({ tgId: "100002", playerId: "PLAYER001", amount: 500, status: "pending", invoiceId: "inv_demo_1" });
-  await storage.createPayment({ tgId: "100003", playerId: "PLAYER002", amount: 1000, status: "paid", invoiceId: "inv_demo_2" });
-  await storage.createPayment({ tgId: "100004", playerId: "PLAYER003", amount: 200, status: "cancelled", invoiceId: "inv_demo_3" });
-
-  await storage.createManagerMessage({ tgId: "100002", username: "demo_user2", userStep: "STEP_1", reason: "Потрібна допомога з встановленням" });
-  await storage.createManagerMessage({ tgId: "100003", username: "demo_user3", userStep: "STEP_2", reason: "Не знайшов клуб" });
-
-  await storage.setConfig("club_id", "CLUB777");
-  await storage.setConfig("welcome_text", "Ласкаво просимо до нашого клубу! Оберіть дію:");
-  await storage.setConfig("step1_text", "Крок 1: Встановіть додаток\n\nОберіть вашу платформу та встановіть додаток:");
-  await storage.setConfig("step2_text", "Крок 2: Вступ до клубу\n\nЗнайдіть клуб за ID та приєднайтесь.");
-  await storage.setConfig("bonus_text", "Крок 3: Бонус\n\nВітаємо! Ви можете отримати бонус за реєстрацію.");
-  await storage.setConfig("payment_amounts", "100, 200, 500, 1000, 2000, 5000");
+  for (const [key, value] of Object.entries(defaults)) {
+    if (!existingKeys.has(key)) {
+      await storage.setConfig(key, value);
+    }
+  }
 }
 
 export async function registerRoutes(
@@ -75,9 +71,9 @@ export async function registerRoutes(
   await initDatabase();
   startBot();
   try {
-    await seedData();
+    await seedDefaults();
   } catch (e) {
-    console.error("Seed data error:", e);
+    console.error("Seed defaults error:", e);
   }
 
   app.post("/api/upload", upload.single("file"), (req, res) => {
