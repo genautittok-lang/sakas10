@@ -1,4 +1,4 @@
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and, count } from "drizzle-orm";
 import { db } from "./db";
 import {
   botUsers, payments, botConfig, managerMessages,
@@ -13,6 +13,7 @@ export interface IStorage {
   createBotUser(user: InsertBotUser): Promise<BotUser>;
   updateBotUser(tgId: string, data: Partial<InsertBotUser>): Promise<BotUser | undefined>;
   getAllBotUsers(): Promise<BotUser[]>;
+  countBotUsers(): Promise<number>;
 
   createPayment(payment: InsertPayment): Promise<Payment>;
   getPayment(id: string): Promise<Payment | undefined>;
@@ -20,6 +21,7 @@ export interface IStorage {
   updatePaymentStatus(id: string, status: string): Promise<Payment | undefined>;
   getAllPayments(): Promise<Payment[]>;
   getPaymentsByTgId(tgId: string): Promise<Payment[]>;
+  countPendingPayments(): Promise<number>;
 
   getConfig(key: string): Promise<string | undefined>;
   setConfig(key: string, value: string): Promise<void>;
@@ -28,6 +30,7 @@ export interface IStorage {
   createManagerMessage(msg: InsertManagerMessage): Promise<ManagerMessage>;
   getAllManagerMessages(): Promise<ManagerMessage[]>;
   resolveManagerMessage(id: string): Promise<void>;
+  countPendingMessages(): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -107,6 +110,21 @@ export class DatabaseStorage implements IStorage {
 
   async resolveManagerMessage(id: string): Promise<void> {
     await db.update(managerMessages).set({ resolved: true }).where(eq(managerMessages.id, id));
+  }
+
+  async countPendingMessages(): Promise<number> {
+    const [result] = await db.select({ count: count() }).from(managerMessages).where(eq(managerMessages.resolved, false));
+    return result?.count || 0;
+  }
+
+  async countPendingPayments(): Promise<number> {
+    const [result] = await db.select({ count: count() }).from(payments).where(eq(payments.status, "pending"));
+    return result?.count || 0;
+  }
+
+  async countBotUsers(): Promise<number> {
+    const [result] = await db.select({ count: count() }).from(botUsers);
+    return result?.count || 0;
   }
 }
 
