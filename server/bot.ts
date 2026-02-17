@@ -34,6 +34,28 @@ async function getConfigValue(key: string, fallback: string): Promise<string> {
 }
 
 const managerReplyState: Map<string, string> = new Map();
+const broadcastState: Map<string, boolean> = new Map();
+
+function translateStep(step: string): string {
+  const translations: Record<string, string> = {
+    HOME: "Головна",
+    STEP_1: "Крок 1",
+    STEP_2: "Крок 2",
+    STEP_3: "Крок 3",
+    PAYMENT: "Оплата",
+  };
+  return translations[step] || step;
+}
+
+function translatePaymentStatus(status: string): string {
+  const translations: Record<string, string> = {
+    paid: "Оплачено",
+    pending: "Очікує",
+    cancelled: "Скасовано",
+    processing: "В обробці",
+  };
+  return translations[status] || status;
+}
 
 async function sendManagerNotification(tgId: string, username: string | null, step: string, reason: string) {
   if (!bot) return;
@@ -297,6 +319,96 @@ async function showPaymentStep3(chatId: number, amount: number, playerId: string
   });
 }
 
+async function showAdminStats(chatId: number) {
+  const users = await storage.getAllBotUsers();
+  const payments = await storage.getAllPayments();
+
+  const totalUsers = users.length;
+  const stepCounts: Record<string, number> = {};
+  for (const u of users) {
+    stepCounts[u.currentStep] = (stepCounts[u.currentStep] || 0) + 1;
+  }
+
+  const totalPayments = payments.length;
+  const paidPayments = payments.filter(p => p.status === "paid");
+  const pendingPayments = payments.filter(p => p.status === "pending");
+  const paidAmount = paidPayments.reduce((sum, p) => sum + p.amount, 0);
+  const pendingAmount = pendingPayments.reduce((sum, p) => sum + p.amount, 0);
+
+  const stepLines = Object.entries(stepCounts).map(([step, cnt]) => `  ${translateStep(step)}: ${cnt}`).join("\n");
+
+  const text =
+    `\u{1F4CA} \u0421\u0442\u0430\u0442\u0438\u0441\u0442\u0438\u043A\u0430 \u0431\u043E\u0442\u0430\n\n` +
+    `\u{1F465} \u0412\u0441\u044C\u043E\u0433\u043E \u043A\u043E\u0440\u0438\u0441\u0442\u0443\u0432\u0430\u0447\u0456\u0432: ${totalUsers}\n\n` +
+    `\u{1F4CD} \u041A\u043E\u0440\u0438\u0441\u0442\u0443\u0432\u0430\u0447\u0456 \u043F\u043E \u043A\u0440\u043E\u043A\u0430\u0445:\n${stepLines}\n\n` +
+    `\u{1F4B3} \u0412\u0441\u044C\u043E\u0433\u043E \u043F\u043B\u0430\u0442\u0435\u0436\u0456\u0432: ${totalPayments}\n` +
+    `\u2705 \u041E\u043F\u043B\u0430\u0447\u0435\u043D\u043E: ${paidPayments.length} (${paidAmount} \u20B4)\n` +
+    `\u23F3 \u041E\u0447\u0456\u043A\u0443\u044E\u0442\u044C: ${pendingPayments.length} (${pendingAmount} \u20B4)`;
+
+  await bot!.sendMessage(chatId, text, {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: "\u{1F519} \u041D\u0430\u0437\u0430\u0434", callback_data: "admin_menu" }],
+      ],
+    },
+  });
+}
+
+async function showAdminUsers(chatId: number) {
+  const users = await storage.getAllBotUsers();
+  const last10 = users.slice(0, 10);
+
+  if (last10.length === 0) {
+    await bot!.sendMessage(chatId, "\u{1F465} \u041A\u043E\u0440\u0438\u0441\u0442\u0443\u0432\u0430\u0447\u0456\u0432 \u043D\u0435\u043C\u0430\u0454.");
+    return;
+  }
+
+  const lines = last10.map((u, i) =>
+    `${i + 1}. \u{1F464} ${u.tgId}\n` +
+    `   \u{1F4DD} @${u.username || "\u043D\u0435\u0432\u0456\u0434\u043E\u043C\u043E"}\n` +
+    `   \u{1F4CD} \u041A\u0440\u043E\u043A: ${translateStep(u.currentStep)}\n` +
+    `   \u{1F381} \u0411\u043E\u043D\u0443\u0441: ${u.claimedBonus ? "\u2705" : "\u274C"}`
+  ).join("\n\n");
+
+  await bot!.sendMessage(chatId, `\u{1F465} \u041E\u0441\u0442\u0430\u043D\u043D\u0456 10 \u043A\u043E\u0440\u0438\u0441\u0442\u0443\u0432\u0430\u0447\u0456\u0432:\n\n${lines}`, {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: "\u{1F519} \u041D\u0430\u0437\u0430\u0434", callback_data: "admin_menu" }],
+      ],
+    },
+  });
+}
+
+async function showAdminPayments(chatId: number) {
+  const allPayments = await storage.getAllPayments();
+  const last10 = allPayments.slice(0, 10);
+
+  if (last10.length === 0) {
+    await bot!.sendMessage(chatId, "\u{1F4B3} \u041F\u043B\u0430\u0442\u0435\u0436\u0456\u0432 \u043D\u0435\u043C\u0430\u0454.");
+    return;
+  }
+
+  const statusIcon = (s: string) => s === "paid" ? "\u2705" : s === "pending" ? "\u23F3" : s === "cancelled" ? "\u274C" : "\u{1F504}";
+
+  const lines = last10.map((p, i) =>
+    `${i + 1}. ${statusIcon(p.status)} ${translatePaymentStatus(p.status)}\n` +
+    `   \u{1F464} TG: ${p.tgId}\n` +
+    `   \u{1F4B0} ${p.amount} \u20B4\n` +
+    `   \u{1F3AE} Player: ${p.playerId}\n` +
+    `   \u{1F4C5} ${p.createdAt ? new Date(p.createdAt).toLocaleDateString("uk-UA") : "\u2014"}`
+  ).join("\n\n");
+
+  const pendingButtons = last10
+    .filter(p => p.status === "pending")
+    .map(p => [{ text: `\u2705 \u041F\u0456\u0434\u0442\u0432\u0435\u0440\u0434\u0438\u0442\u0438 #${p.id.slice(0, 6)}`, callback_data: `admin_confirm_${p.id}` }]);
+
+  const keyboard = [...pendingButtons, [{ text: "\u{1F519} \u041D\u0430\u0437\u0430\u0434", callback_data: "admin_menu" }]];
+
+  await bot!.sendMessage(chatId, `\u{1F4B3} \u041E\u0441\u0442\u0430\u043D\u043D\u0456 10 \u043F\u043B\u0430\u0442\u0435\u0436\u0456\u0432:\n\n${lines}`, {
+    reply_markup: { inline_keyboard: keyboard },
+  });
+}
+
 export function startBot() {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   if (!token) {
@@ -315,6 +427,31 @@ export function startBot() {
     await ensureUser(tgId, username);
     await storage.updateBotUser(tgId, { currentStep: "HOME", paymentSubStep: null, paymentAmount: null, paymentPlayerId: null });
     await showHome(chatId, tgId);
+  });
+
+  bot.onText(/\/admin/, async (msg) => {
+    const chatId = msg.chat.id;
+    const managerChatId = await getConfigValue("manager_chat_id", "");
+    if (!managerChatId || String(chatId) !== managerChatId) return;
+
+    await bot!.sendMessage(chatId, "\u{1F6E0}\uFE0F \u0410\u0434\u043C\u0456\u043D-\u043F\u0430\u043D\u0435\u043B\u044C\n\n\u041E\u0431\u0435\u0440\u0456\u0442\u044C \u0434\u0456\u044E:", {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: "\u{1F4CA} \u0421\u0442\u0430\u0442\u0438\u0441\u0442\u0438\u043A\u0430", callback_data: "admin_stats" }],
+          [{ text: "\u{1F465} \u041A\u043E\u0440\u0438\u0441\u0442\u0443\u0432\u0430\u0447\u0456", callback_data: "admin_users" }],
+          [{ text: "\u{1F4B3} \u041E\u043F\u043B\u0430\u0442\u0438", callback_data: "admin_payments" }],
+          [{ text: "\u{1F4E2} \u0420\u043E\u0437\u0441\u0438\u043B\u043A\u0430", callback_data: "admin_broadcast" }],
+        ],
+      },
+    });
+  });
+
+  bot.onText(/\/stats/, async (msg) => {
+    const chatId = msg.chat.id;
+    const managerChatId = await getConfigValue("manager_chat_id", "");
+    if (!managerChatId || String(chatId) !== managerChatId) return;
+
+    await showAdminStats(chatId);
   });
 
   bot.on("callback_query", async (query) => {
@@ -356,8 +493,93 @@ export function startBot() {
       const managerChatId = await getConfigValue("manager_chat_id", "");
       if (String(chatId) === managerChatId) {
         managerReplyState.delete(managerChatId);
+        broadcastState.delete(managerChatId);
         await bot!.sendMessage(chatId, "\u274C \u0412\u0456\u0434\u043F\u043E\u0432\u0456\u0434\u044C \u0441\u043A\u0430\u0441\u043E\u0432\u0430\u043D\u043E.");
       }
+      return;
+    }
+
+    if (data === "admin_menu") {
+      const managerChatId = await getConfigValue("manager_chat_id", "");
+      if (String(chatId) === managerChatId) {
+        await bot!.sendMessage(chatId, "\u{1F6E0}\uFE0F \u0410\u0434\u043C\u0456\u043D-\u043F\u0430\u043D\u0435\u043B\u044C\n\n\u041E\u0431\u0435\u0440\u0456\u0442\u044C \u0434\u0456\u044E:", {
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: "\u{1F4CA} \u0421\u0442\u0430\u0442\u0438\u0441\u0442\u0438\u043A\u0430", callback_data: "admin_stats" }],
+              [{ text: "\u{1F465} \u041A\u043E\u0440\u0438\u0441\u0442\u0443\u0432\u0430\u0447\u0456", callback_data: "admin_users" }],
+              [{ text: "\u{1F4B3} \u041E\u043F\u043B\u0430\u0442\u0438", callback_data: "admin_payments" }],
+              [{ text: "\u{1F4E2} \u0420\u043E\u0437\u0441\u0438\u043B\u043A\u0430", callback_data: "admin_broadcast" }],
+            ],
+          },
+        });
+      }
+      return;
+    }
+
+    if (data === "admin_stats") {
+      const managerChatId = await getConfigValue("manager_chat_id", "");
+      if (String(chatId) === managerChatId) {
+        await showAdminStats(chatId);
+      }
+      return;
+    }
+
+    if (data === "admin_users") {
+      const managerChatId = await getConfigValue("manager_chat_id", "");
+      if (String(chatId) === managerChatId) {
+        await showAdminUsers(chatId);
+      }
+      return;
+    }
+
+    if (data === "admin_payments") {
+      const managerChatId = await getConfigValue("manager_chat_id", "");
+      if (String(chatId) === managerChatId) {
+        await showAdminPayments(chatId);
+      }
+      return;
+    }
+
+    if (data === "admin_broadcast") {
+      const managerChatId = await getConfigValue("manager_chat_id", "");
+      if (String(chatId) === managerChatId) {
+        broadcastState.set(managerChatId, true);
+        await bot!.sendMessage(chatId, "\u{1F4E2} \u0420\u043E\u0437\u0441\u0438\u043B\u043A\u0430\n\n\u041D\u0430\u043F\u0438\u0448\u0456\u0442\u044C \u043F\u043E\u0432\u0456\u0434\u043E\u043C\u043B\u0435\u043D\u043D\u044F, \u044F\u043A\u0435 \u0431\u0443\u0434\u0435 \u043D\u0430\u0434\u0456\u0441\u043B\u0430\u043D\u043E \u0432\u0441\u0456\u043C \u043A\u043E\u0440\u0438\u0441\u0442\u0443\u0432\u0430\u0447\u0430\u043C:", {
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: "\u274C \u0421\u043A\u0430\u0441\u0443\u0432\u0430\u0442\u0438", callback_data: "cancel_reply" }],
+            ],
+          },
+        });
+      }
+      return;
+    }
+
+    if (data.startsWith("admin_confirm_")) {
+      const managerChatId = await getConfigValue("manager_chat_id", "");
+      if (String(chatId) !== managerChatId) return;
+
+      const paymentId = data.replace("admin_confirm_", "");
+      const payment = await storage.getPayment(paymentId);
+      if (!payment) {
+        await bot!.sendMessage(chatId, "\u274C \u041F\u043B\u0430\u0442\u0456\u0436 \u043D\u0435 \u0437\u043D\u0430\u0439\u0434\u0435\u043D\u043E.");
+        return;
+      }
+
+      await storage.updatePaymentStatus(paymentId, "paid");
+
+      await sendMessageToUser(payment.tgId,
+        `\u2705 \u0412\u0430\u0448\u0443 \u043E\u043F\u043B\u0430\u0442\u0443 \u043F\u0456\u0434\u0442\u0432\u0435\u0440\u0434\u0436\u0435\u043D\u043E!\n\n\u{1F4B0} \u0421\u0443\u043C\u0430: ${payment.amount} \u20B4\n\u{1F3AE} Player ID: ${payment.playerId}`
+      );
+
+      await bot!.sendMessage(chatId,
+        `\u2705 \u041F\u043B\u0430\u0442\u0456\u0436 \u043F\u0456\u0434\u0442\u0432\u0435\u0440\u0434\u0436\u0435\u043D\u043E!\n\n\u{1F464} TG: ${payment.tgId}\n\u{1F4B0} ${payment.amount} \u20B4\n\u{1F3AE} Player: ${payment.playerId}`, {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: "\u{1F519} \u041D\u0430\u0437\u0430\u0434 \u0434\u043E \u043E\u043F\u043B\u0430\u0442", callback_data: "admin_payments" }],
+          ],
+        },
+      });
       return;
     }
 
@@ -500,6 +722,38 @@ export function startBot() {
         await bot!.sendMessage(chatId, `\u2705 \u0412\u0456\u0434\u043F\u043E\u0432\u0456\u0434\u044C \u0432\u0456\u0434\u043F\u0440\u0430\u0432\u043B\u0435\u043D\u043E \u043A\u043E\u0440\u0438\u0441\u0442\u0443\u0432\u0430\u0447\u0443 ${targetTgId}!`);
         return;
       }
+
+      if (broadcastState.get(managerChatId) && msg.text) {
+        broadcastState.delete(managerChatId);
+        const allUsers = await storage.getAllBotUsers();
+        let sent = 0;
+        let failed = 0;
+
+        await bot!.sendMessage(chatId, `\u{1F4E2} \u0420\u043E\u0437\u0441\u0438\u043B\u043A\u0430 \u0440\u043E\u0437\u043F\u043E\u0447\u0430\u0442\u0430... (\u{1F465} ${allUsers.length} \u043A\u043E\u0440\u0438\u0441\u0442\u0443\u0432\u0430\u0447\u0456\u0432)`);
+
+        for (const u of allUsers) {
+          try {
+            await bot!.sendMessage(parseInt(u.tgId), msg.text);
+            sent++;
+          } catch (err) {
+            failed++;
+            log(`Broadcast failed for ${u.tgId}: ${err}`, "bot");
+          }
+        }
+
+        await bot!.sendMessage(chatId,
+          `\u2705 \u0420\u043E\u0437\u0441\u0438\u043B\u043A\u0443 \u0437\u0430\u0432\u0435\u0440\u0448\u0435\u043D\u043E!\n\n` +
+          `\u{1F4E8} \u041D\u0430\u0434\u0456\u0441\u043B\u0430\u043D\u043E: ${sent}\n` +
+          `\u274C \u041F\u043E\u043C\u0438\u043B\u043A\u0438: ${failed}`, {
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: "\u{1F519} \u041D\u0430\u0437\u0430\u0434", callback_data: "admin_menu" }],
+            ],
+          },
+        });
+        return;
+      }
+
       return;
     }
 
