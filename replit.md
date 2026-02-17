@@ -12,7 +12,8 @@ Payment integration with Convert2pay. File upload support for videos.
 
 ## Bot Flow
 Users go through: HOME -> STEP_1 (install app) -> STEP_2 (join club) -> STEP_3 (bonus) -> PAYMENT
-- Each screen has "Manager 24/7" button
+- Each screen has "Manager 24/7" button (including payment sub-steps)
+- Steps are strictly sequential - user cannot skip steps
 - Payment: choose amount -> enter Player ID -> get payment link -> check status
 - Convert2pay integration for payment processing
 
@@ -35,12 +36,12 @@ Users go through: HOME -> STEP_1 (install app) -> STEP_2 (join club) -> STEP_3 (
 - `club_id` - Club ID shown in step 2
 - `step1_video`, `step2_video` - Video URLs or uploaded files for steps
 - `android_link`, `ios_link`, `windows_link` - App download links
-- `payment_link_template` - Fallback payment URL template
+- `payment_amounts` - Comma-separated fixed amounts for payment buttons (default: 100, 200, 500, 1000, 2000, 5000)
 - `convert2pay_api_url` - Convert2pay API endpoint
 - `convert2pay_merchant_id` - Merchant ID
 - `convert2pay_secret_key` - Secret key (also used for webhook verification)
 - `convert2pay_currency` - Currency code (default UAH)
-- Various text fields for bot messages
+- Various text fields for bot messages (welcome_text, step1_text, step2_text, bonus_text, rules_text)
 
 ## API Endpoints
 - GET /api/stats - Dashboard statistics

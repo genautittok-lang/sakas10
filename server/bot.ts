@@ -5,7 +5,14 @@ import { randomUUID } from "crypto";
 
 let bot: TelegramBot | null = null;
 
-const FIXED_AMOUNTS = [100, 200, 500, 1000, 2000, 5000];
+const DEFAULT_AMOUNTS = [100, 200, 500, 1000, 2000, 5000];
+
+async function getPaymentAmounts(): Promise<number[]> {
+  const raw = await storage.getConfig("payment_amounts");
+  if (!raw) return DEFAULT_AMOUNTS;
+  const parsed = raw.split(",").map(s => parseInt(s.trim())).filter(n => !isNaN(n) && n > 0);
+  return parsed.length > 0 ? parsed : DEFAULT_AMOUNTS;
+}
 
 function getServerBaseUrl(): string {
   const port = process.env.PORT || "5000";
@@ -175,22 +182,30 @@ async function showStep3(chatId: number) {
 }
 
 async function showPaymentStep1(chatId: number) {
+  const amounts = await getPaymentAmounts();
+  const rows: any[][] = [];
+  for (let i = 0; i < amounts.length; i += 3) {
+    rows.push(amounts.slice(i, i + 3).map(a => ({ text: `${a} \u20B4`, callback_data: `amount_${a}` })));
+  }
+  rows.push([{ text: "\u270F\uFE0F \u0412\u0432\u0435\u0441\u0442\u0438 \u0432\u0440\u0443\u0447\u043D\u0443", callback_data: "custom_amount" }]);
+  rows.push([{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }]);
+  rows.push([{ text: "\u{1F3E0} Home", callback_data: "go_home" }]);
+
   await bot!.sendMessage(chatId, "\u{1F4B3} \u041E\u0431\u0435\u0440\u0456\u0442\u044C \u0441\u0443\u043C\u0443 \u043F\u043E\u043F\u043E\u0432\u043D\u0435\u043D\u043D\u044F:", {
-    reply_markup: {
-      inline_keyboard: [
-        FIXED_AMOUNTS.slice(0, 3).map(a => ({ text: `${a} \u20B4`, callback_data: `amount_${a}` })),
-        FIXED_AMOUNTS.slice(3).map(a => ({ text: `${a} \u20B4`, callback_data: `amount_${a}` })),
-        [{ text: "\u270F\uFE0F \u0412\u0432\u0435\u0441\u0442\u0438 \u0432\u0440\u0443\u0447\u043D\u0443", callback_data: "custom_amount" }],
-        [{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }],
-        [{ text: "\u{1F3E0} Home", callback_data: "go_home" }],
-      ],
-    },
+    reply_markup: { inline_keyboard: rows },
   });
 }
 
 async function showPaymentStep2(chatId: number, amount: number) {
   await bot!.sendMessage(chatId,
-    `\u{1F4B0} \u0421\u0443\u043C\u0430: ${amount} \u20B4\n\n\u{1F4DD} \u0412\u0432\u0435\u0434\u0456\u0442\u044C \u0432\u0430\u0448 Player ID:`);
+    `\u{1F4B0} \u0421\u0443\u043C\u0430: ${amount} \u20B4\n\n\u{1F4DD} \u0412\u0432\u0435\u0434\u0456\u0442\u044C \u0432\u0430\u0448 Player ID:`, {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }],
+        [{ text: "\u{1F3E0} Home", callback_data: "go_home" }],
+      ],
+    },
+  });
 }
 
 async function createConvert2payPayment(amount: number, playerId: string, paymentId: string): Promise<string | null> {
@@ -337,7 +352,7 @@ export function startBot() {
     }
 
     if (data === "installed_app") {
-      if (user.currentStep === "STEP_1" || user.currentStep === "HOME") {
+      if (user.currentStep === "STEP_1") {
         await storage.updateBotUser(tgId, { currentStep: "STEP_2" });
         await showStep2(chatId);
       }
@@ -345,7 +360,7 @@ export function startBot() {
     }
 
     if (data === "joined_club") {
-      if (user.currentStep === "STEP_2" || user.currentStep === "STEP_1") {
+      if (user.currentStep === "STEP_2") {
         await storage.updateBotUser(tgId, { currentStep: "STEP_3" });
         await showStep3(chatId);
       }
@@ -380,7 +395,14 @@ export function startBot() {
 
     if (data === "custom_amount") {
       await storage.updateBotUser(tgId, { paymentSubStep: "custom_amount" });
-      await bot!.sendMessage(chatId, "\u270F\uFE0F \u0412\u0432\u0435\u0434\u0456\u0442\u044C \u0441\u0443\u043C\u0443 \u043F\u043E\u043F\u043E\u0432\u043D\u0435\u043D\u043D\u044F (\u0447\u0438\u0441\u043B\u043E):");
+      await bot!.sendMessage(chatId, "\u270F\uFE0F \u0412\u0432\u0435\u0434\u0456\u0442\u044C \u0441\u0443\u043C\u0443 \u043F\u043E\u043F\u043E\u0432\u043D\u0435\u043D\u043D\u044F (\u0447\u0438\u0441\u043B\u043E):", {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }],
+            [{ text: "\u{1F3E0} Home", callback_data: "go_home" }],
+          ],
+        },
+      });
       return;
     }
 
@@ -428,7 +450,14 @@ export function startBot() {
     if (user.currentStep === "PAYMENT" && user.paymentSubStep === "custom_amount") {
       const amount = parseInt(msg.text || "");
       if (isNaN(amount) || amount <= 0) {
-        await bot!.sendMessage(chatId, "\u274C \u0412\u0432\u0435\u0434\u0456\u0442\u044C \u043A\u043E\u0440\u0435\u043A\u0442\u043D\u0443 \u0441\u0443\u043C\u0443 (\u043F\u043E\u0437\u0438\u0442\u0438\u0432\u043D\u0435 \u0447\u0438\u0441\u043B\u043E):");
+        await bot!.sendMessage(chatId, "\u274C \u0412\u0432\u0435\u0434\u0456\u0442\u044C \u043A\u043E\u0440\u0435\u043A\u0442\u043D\u0443 \u0441\u0443\u043C\u0443 (\u043F\u043E\u0437\u0438\u0442\u0438\u0432\u043D\u0435 \u0447\u0438\u0441\u043B\u043E):", {
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }],
+              [{ text: "\u{1F3E0} Home", callback_data: "go_home" }],
+            ],
+          },
+        });
         return;
       }
       await storage.updateBotUser(tgId, { paymentAmount: amount, paymentSubStep: "player_id" });
@@ -439,7 +468,14 @@ export function startBot() {
     if (user.currentStep === "PAYMENT" && user.paymentSubStep === "player_id") {
       const playerId = msg.text?.trim() || "";
       if (!playerId) {
-        await bot!.sendMessage(chatId, "\u274C \u0412\u0432\u0435\u0434\u0456\u0442\u044C \u043A\u043E\u0440\u0435\u043A\u0442\u043D\u0438\u0439 Player ID:");
+        await bot!.sendMessage(chatId, "\u274C \u0412\u0432\u0435\u0434\u0456\u0442\u044C \u043A\u043E\u0440\u0435\u043A\u0442\u043D\u0438\u0439 Player ID:", {
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }],
+              [{ text: "\u{1F3E0} Home", callback_data: "go_home" }],
+            ],
+          },
+        });
         return;
       }
 

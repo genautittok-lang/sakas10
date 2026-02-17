@@ -61,6 +61,7 @@ async function seedData() {
   await storage.setConfig("step1_text", "Крок 1: Встановіть додаток\n\nОберіть вашу платформу та встановіть додаток:");
   await storage.setConfig("step2_text", "Крок 2: Вступ до клубу\n\nЗнайдіть клуб за ID та приєднайтесь.");
   await storage.setConfig("bonus_text", "Крок 3: Бонус\n\nВітаємо! Ви можете отримати бонус за реєстрацію.");
+  await storage.setConfig("payment_amounts", "100, 200, 500, 1000, 2000, 5000");
 }
 
 export async function registerRoutes(
