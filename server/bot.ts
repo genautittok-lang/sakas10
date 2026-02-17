@@ -35,6 +35,7 @@ async function getConfigValue(key: string, fallback: string): Promise<string> {
 
 const managerReplyState: Map<string, string> = new Map();
 const broadcastState: Map<string, boolean> = new Map();
+const userManagerState: Map<string, boolean> = new Map();
 
 function translateStep(step: string): string {
   const translations: Record<string, string> = {
@@ -425,6 +426,7 @@ export function startBot() {
     const username = msg.from?.username;
 
     await ensureUser(tgId, username);
+    userManagerState.delete(tgId);
     await storage.updateBotUser(tgId, { currentStep: "HOME", paymentSubStep: null, paymentAmount: null, paymentPlayerId: null });
     await showHome(chatId, tgId);
   });
@@ -466,8 +468,20 @@ export function startBot() {
     const user = await ensureUser(tgId, username || undefined);
 
     if (data === "manager") {
-      await bot!.sendMessage(chatId, "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 \u0441\u043A\u043E\u0440\u043E \u043D\u0430\u043F\u0438\u0448\u0435 \u0432\u0430\u043C. \u041E\u0447\u0456\u043A\u0443\u0439\u0442\u0435!");
-      await sendManagerNotification(tgId, username, user.currentStep, "\u0417\u0430\u043F\u0438\u0442 \u043C\u0435\u043D\u0435\u0434\u0436\u0435\u0440\u0430 24/7");
+      userManagerState.set(tgId, true);
+      await bot!.sendMessage(chatId, "\u{1F4AC} \u041E\u043F\u0438\u0448\u0456\u0442\u044C \u0432\u0430\u0448\u0443 \u043F\u0440\u043E\u0431\u043B\u0435\u043C\u0443, \u0456 \u043C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 \u0432\u0456\u0434\u043F\u043E\u0432\u0456\u0441\u0442\u044C \u0432\u0430\u043C \u043D\u0430\u0439\u0431\u043B\u0438\u0436\u0447\u0438\u043C \u0447\u0430\u0441\u043E\u043C.", {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: "\u274C \u0421\u043A\u0430\u0441\u0443\u0432\u0430\u0442\u0438", callback_data: "cancel_manager_msg" }],
+          ],
+        },
+      });
+      return;
+    }
+
+    if (data === "cancel_manager_msg") {
+      userManagerState.delete(tgId);
+      await bot!.sendMessage(chatId, "\u274C \u0417\u0432\u0435\u0440\u043D\u0435\u043D\u043D\u044F \u0441\u043A\u0430\u0441\u043E\u0432\u0430\u043D\u043E.");
       return;
     }
 
@@ -597,6 +611,7 @@ export function startBot() {
     }
 
     if (data === "go_home") {
+      userManagerState.delete(tgId);
       await storage.updateBotUser(tgId, { currentStep: "HOME", paymentSubStep: null, paymentAmount: null, paymentPlayerId: null });
       await showHome(chatId, tgId);
       return;
@@ -754,6 +769,21 @@ export function startBot() {
         return;
       }
 
+      return;
+    }
+
+    if (userManagerState.get(tgId) && msg.text) {
+      userManagerState.delete(tgId);
+      const user = await storage.getBotUser(tgId);
+      const step = user?.currentStep || "HOME";
+      await sendManagerNotification(tgId, msg.from?.username || null, step, msg.text);
+      await bot!.sendMessage(chatId, "\u2705 \u0412\u0430\u0448\u0435 \u043F\u043E\u0432\u0456\u0434\u043E\u043C\u043B\u0435\u043D\u043D\u044F \u0432\u0456\u0434\u043F\u0440\u0430\u0432\u043B\u0435\u043D\u043E \u043C\u0435\u043D\u0435\u0434\u0436\u0435\u0440\u0443. \u041E\u0447\u0456\u043A\u0443\u0439\u0442\u0435 \u0432\u0456\u0434\u043F\u043E\u0432\u0456\u0434\u044C!", {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: "\u{1F3E0} \u0413\u043E\u043B\u043E\u0432\u043D\u0430", callback_data: "go_home" }],
+          ],
+        },
+      });
       return;
     }
 
