@@ -2,6 +2,7 @@ import { useLocation, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
 import { LayoutDashboard, Users, CreditCard, MessageSquare, Settings, Bot } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import {
   Sidebar,
   SidebarContent,
@@ -56,6 +57,7 @@ export function AppSidebar() {
           </div>
         </div>
       </SidebarHeader>
+      <Separator className="mx-4 w-auto opacity-50" />
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Навігація</SidebarGroupLabel>
@@ -91,7 +93,10 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="p-4">
-        <p className="text-xs text-muted-foreground text-center" data-testid="text-sidebar-version">v1.0</p>
+        <Separator className="mb-3 opacity-50" />
+        <p className="text-xs text-muted-foreground text-center" data-testid="text-sidebar-version">
+          v1.0 build 2026.02
+        </p>
       </SidebarFooter>
     </Sidebar>
   );

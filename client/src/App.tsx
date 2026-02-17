@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
+import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Moon, Sun } from "lucide-react";
 import NotFound from "@/pages/not-found";
@@ -80,10 +81,11 @@ function AppLayout() {
       <div className="flex h-screen w-full">
         <AppSidebar />
         <div className="flex flex-col flex-1 min-w-0">
-          <header className="flex items-center justify-between gap-4 p-3 border-b sticky top-0 z-50 bg-background">
-            <div className="flex items-center gap-2">
+          <header className="flex items-center justify-between gap-4 px-4 py-2.5 border-b sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="flex items-center gap-3">
               <SidebarTrigger data-testid="button-sidebar-toggle" />
-              <span className="text-sm font-medium" data-testid="text-page-title">{currentPageName}</span>
+              <Separator orientation="vertical" className="h-5" />
+              <span className="text-sm font-semibold" data-testid="text-page-title">{currentPageName}</span>
             </div>
             <ThemeToggle />
           </header>

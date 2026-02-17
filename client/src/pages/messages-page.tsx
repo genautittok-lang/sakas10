@@ -11,7 +11,7 @@ import { Separator } from "@/components/ui/separator";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { ManagerMessage, MessageReply } from "@shared/schema";
-import { Check, MessageSquare, Clock, CheckCircle, Send, Eye, Globe, MessageCircle } from "lucide-react";
+import { Check, MessageSquare, Clock, CheckCircle, Send, Eye, Globe, MessageCircle, AlertTriangle } from "lucide-react";
 import { SiTelegram } from "react-icons/si";
 
 type MessageWithReplies = ManagerMessage & { replies?: MessageReply[] };
@@ -90,11 +90,13 @@ export default function MessagesPage() {
     <div className="p-6 space-y-6">
       <h1 className="text-2xl font-semibold" data-testid="text-messages-title">Повідомлення менеджеру</h1>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Всього повідомлень</CardTitle>
-            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+            <div className="bg-blue-500/10 dark:bg-blue-400/10 p-2.5 rounded-lg">
+              <MessageSquare className="h-4 w-4 text-blue-500 dark:text-blue-400" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold" data-testid="text-total-messages">{totalMessages}</div>
@@ -103,7 +105,9 @@ export default function MessagesPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Очікують</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <div className="bg-orange-500/10 dark:bg-orange-400/10 p-2.5 rounded-lg">
+              <Clock className="h-4 w-4 text-orange-500 dark:text-orange-400" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold" data-testid="text-pending-messages">{pendingCount}</div>
@@ -112,7 +116,9 @@ export default function MessagesPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">Вирішено</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+            <div className="bg-emerald-500/10 dark:bg-emerald-400/10 p-2.5 rounded-lg">
+              <CheckCircle className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold" data-testid="text-resolved-messages">{resolvedCount}</div>
@@ -154,7 +160,12 @@ export default function MessagesPage() {
                 </TableHeader>
                 <TableBody>
                   {messages.map((msg) => (
-                    <TableRow key={msg.id} className="hover-elevate cursor-pointer" data-testid={`row-message-${msg.id}`} onClick={() => handleOpenMessage(msg.id)}>
+                    <TableRow
+                      key={msg.id}
+                      className={`hover-elevate cursor-pointer ${!msg.resolved ? "border-l-2 border-l-destructive" : ""}`}
+                      data-testid={`row-message-${msg.id}`}
+                      onClick={() => handleOpenMessage(msg.id)}
+                    >
                       <TableCell className="font-mono text-sm">{msg.tgId}</TableCell>
                       <TableCell>
                         {msg.username ? (
@@ -165,9 +176,14 @@ export default function MessagesPage() {
                       </TableCell>
                       <TableCell className="text-sm">{msg.userStep || "\u2014"}</TableCell>
                       <TableCell className="max-w-[300px]">
-                        <p className="text-sm font-medium whitespace-pre-wrap break-words line-clamp-2">
-                          {msg.reason || "\u2014"}
-                        </p>
+                        <div className="flex items-start gap-2">
+                          {!msg.resolved && (
+                            <AlertTriangle className="h-4 w-4 text-destructive shrink-0 mt-0.5" />
+                          )}
+                          <p className="text-sm font-medium whitespace-pre-wrap break-words line-clamp-2">
+                            {msg.reason || "\u2014"}
+                          </p>
+                        </div>
                       </TableCell>
                       <TableCell>
                         {msg.resolved ? (
@@ -249,29 +265,31 @@ export default function MessagesPage() {
             </div>
           ) : messageDetail ? (
             <div className="flex flex-col flex-1 min-h-0 gap-4">
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div>
-                  <span className="text-muted-foreground">Telegram ID:</span>
-                  <span className="ml-2 font-mono" data-testid="text-detail-tgid">{messageDetail.tgId}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Username:</span>
-                  <span className="ml-2" data-testid="text-detail-username">
-                    {messageDetail.username ? `@${messageDetail.username}` : "\u2014"}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Крок:</span>
-                  <span className="ml-2">{messageDetail.userStep || "\u2014"}</span>
-                </div>
-                <div>
-                  <span className="text-muted-foreground">Дата:</span>
-                  <span className="ml-2">{messageDetail.createdAt ? new Date(messageDetail.createdAt).toLocaleString("uk-UA") : "\u2014"}</span>
+              <div className="rounded-md border p-4">
+                <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-xs text-muted-foreground">Telegram ID</span>
+                    <span className="font-mono" data-testid="text-detail-tgid">{messageDetail.tgId}</span>
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-xs text-muted-foreground">Username</span>
+                    <span data-testid="text-detail-username">
+                      {messageDetail.username ? `@${messageDetail.username}` : "\u2014"}
+                    </span>
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-xs text-muted-foreground">Крок</span>
+                    <span>{messageDetail.userStep || "\u2014"}</span>
+                  </div>
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-xs text-muted-foreground">Дата</span>
+                    <span>{messageDetail.createdAt ? new Date(messageDetail.createdAt).toLocaleString("uk-UA") : "\u2014"}</span>
+                  </div>
                 </div>
               </div>
 
               <div className="rounded-md bg-muted/50 p-4">
-                <p className="text-sm font-medium mb-1 text-muted-foreground">Причина звернення:</p>
+                <p className="text-xs font-medium mb-2 text-muted-foreground uppercase tracking-wider">Причина звернення</p>
                 <p className="text-sm whitespace-pre-wrap break-words" data-testid="text-detail-reason">
                   {messageDetail.reason || "\u2014"}
                 </p>

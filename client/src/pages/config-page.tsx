@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Save, Settings, Upload, Link as LinkIcon, MessageSquare, Film, Smartphone, CreditCard, Cog } from "lucide-react";
+import { Save, Settings, Upload, Link as LinkIcon, MessageSquare, Film, Smartphone, CreditCard, Cog, ChevronDown, CheckCircle } from "lucide-react";
 import type { BotConfig } from "@shared/schema";
 
 interface ConfigField {
@@ -185,6 +186,12 @@ export default function ConfigPage() {
   const { toast } = useToast();
 
   const [values, setValues] = useState<Record<string, string>>({});
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {};
+    SECTIONS.forEach(s => { initial[s.title] = true; });
+    return initial;
+  });
+  const [recentlySaved, setRecentlySaved] = useState<string | null>(null);
 
   useEffect(() => {
     if (configList) {
@@ -198,8 +205,10 @@ export default function ConfigPage() {
     mutationFn: async ({ key, value }: { key: string; value: string }) => {
       await apiRequest("POST", "/api/config", { key, value });
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/config"] });
+      setRecentlySaved(variables.key);
+      setTimeout(() => setRecentlySaved(null), 2000);
       toast({ title: "Збережено" });
     },
     onError: () => {
@@ -211,6 +220,10 @@ export default function ConfigPage() {
     acc[field.key] = field;
     return acc;
   }, {});
+
+  const toggleSection = (title: string) => {
+    setOpenSections(prev => ({ ...prev, [title]: !prev[title] }));
+  };
 
   if (isLoading) {
     return (
@@ -226,7 +239,7 @@ export default function ConfigPage() {
   }
 
   return (
-    <div className="p-6 space-y-8">
+    <div className="p-6 space-y-6">
       <div className="space-y-1">
         <div className="flex items-center gap-2 flex-wrap">
           <Settings className="h-6 w-6 text-muted-foreground" />
@@ -235,73 +248,91 @@ export default function ConfigPage() {
         <p className="text-sm text-muted-foreground" data-testid="text-config-subtitle">Керуйте налаштуваннями бота</p>
       </div>
 
-      <div className="space-y-8">
+      <div className="space-y-6">
         {SECTIONS.map((section) => (
-          <div key={section.title} className="space-y-3">
-            <div className="flex items-center gap-2 flex-wrap">
-              <section.icon className="h-5 w-5 text-muted-foreground" />
-              <div>
-                <h2 className="text-lg font-semibold" data-testid={`text-section-${section.title}`}>{section.title}</h2>
-                <p className="text-sm text-muted-foreground">{section.description}</p>
-              </div>
-            </div>
-            <Card>
-              <CardContent className="p-0">
-                {section.keys.map((key) => {
-                  const field = fieldsByKey[key];
-                  if (!field) return null;
-                  return (
-                    <div
-                      key={field.key}
-                      className="flex flex-col gap-3 p-4 border-b last:border-b-0"
-                      data-testid={`field-row-${field.key}`}
-                    >
-                      <div>
-                        <Label className="text-sm font-medium">{field.label}</Label>
-                        <p className="text-xs text-muted-foreground">{field.description}</p>
-                      </div>
-                      <div className="flex gap-2 items-end justify-between flex-wrap">
-                        <div className="flex-1 min-w-[200px]">
-                          {field.type === "video" ? (
-                            <VideoUploadField
-                              fieldKey={field.key}
-                              value={values[field.key] || ""}
-                              onChange={(val) => setValues(prev => ({ ...prev, [field.key]: val }))}
-                              placeholder={field.placeholder}
-                            />
-                          ) : field.type === "textarea" ? (
-                            <Textarea
-                              value={values[field.key] || ""}
-                              onChange={(e) => setValues(prev => ({ ...prev, [field.key]: e.target.value }))}
-                              placeholder={field.placeholder}
-                              rows={3}
-                              data-testid={`input-config-${field.key}`}
-                            />
-                          ) : (
-                            <Input
-                              value={values[field.key] || ""}
-                              onChange={(e) => setValues(prev => ({ ...prev, [field.key]: e.target.value }))}
-                              placeholder={field.placeholder}
-                              data-testid={`input-config-${field.key}`}
-                            />
-                          )}
-                        </div>
-                        <Button
-                          size="sm"
-                          onClick={() => saveConfig.mutate({ key: field.key, value: values[field.key] || "" })}
-                          disabled={saveConfig.isPending}
-                          data-testid={`button-save-${field.key}`}
-                        >
-                          <Save className="h-3 w-3 mr-1" />
-                          Зберегти
-                        </Button>
-                      </div>
+          <Collapsible
+            key={section.title}
+            open={openSections[section.title]}
+            onOpenChange={() => toggleSection(section.title)}
+          >
+            <div className="space-y-3">
+              <CollapsibleTrigger className="w-full" data-testid={`button-toggle-section-${section.title}`}>
+                <div className="flex items-center justify-between gap-4 hover-elevate rounded-md p-2 -ml-2">
+                  <div className="flex items-center gap-2">
+                    <section.icon className="h-5 w-5 text-muted-foreground" />
+                    <div className="text-left">
+                      <h2 className="text-lg font-semibold" data-testid={`text-section-${section.title}`}>{section.title}</h2>
+                      <p className="text-sm text-muted-foreground">{section.description}</p>
                     </div>
-                  );
-                })}
-              </CardContent>
-            </Card>
-          </div>
+                  </div>
+                  <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${openSections[section.title] ? "rotate-180" : ""}`} />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <Card>
+                  <CardContent className="p-0">
+                    {section.keys.map((key) => {
+                      const field = fieldsByKey[key];
+                      if (!field) return null;
+                      const isSaved = recentlySaved === field.key;
+                      return (
+                        <div
+                          key={field.key}
+                          className="flex flex-col gap-3 p-4 border-b last:border-b-0"
+                          data-testid={`field-row-${field.key}`}
+                        >
+                          <div>
+                            <Label className="text-sm font-medium">{field.label}</Label>
+                            <p className="text-xs text-muted-foreground">{field.description}</p>
+                          </div>
+                          <div className="flex gap-2 items-end justify-between flex-wrap">
+                            <div className="flex-1 min-w-[200px]">
+                              {field.type === "video" ? (
+                                <VideoUploadField
+                                  fieldKey={field.key}
+                                  value={values[field.key] || ""}
+                                  onChange={(val) => setValues(prev => ({ ...prev, [field.key]: val }))}
+                                  placeholder={field.placeholder}
+                                />
+                              ) : field.type === "textarea" ? (
+                                <Textarea
+                                  value={values[field.key] || ""}
+                                  onChange={(e) => setValues(prev => ({ ...prev, [field.key]: e.target.value }))}
+                                  placeholder={field.placeholder}
+                                  rows={3}
+                                  data-testid={`input-config-${field.key}`}
+                                />
+                              ) : (
+                                <Input
+                                  value={values[field.key] || ""}
+                                  onChange={(e) => setValues(prev => ({ ...prev, [field.key]: e.target.value }))}
+                                  placeholder={field.placeholder}
+                                  data-testid={`input-config-${field.key}`}
+                                />
+                              )}
+                            </div>
+                            <Button
+                              size="sm"
+                              onClick={() => saveConfig.mutate({ key: field.key, value: values[field.key] || "" })}
+                              disabled={saveConfig.isPending}
+                              data-testid={`button-save-${field.key}`}
+                            >
+                              {isSaved ? (
+                                <CheckCircle className="h-3 w-3 mr-1 text-emerald-500" />
+                              ) : (
+                                <Save className="h-3 w-3 mr-1" />
+                              )}
+                              {isSaved ? "Збережено" : "Зберегти"}
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </CardContent>
+                </Card>
+              </CollapsibleContent>
+            </div>
+          </Collapsible>
         ))}
       </div>
     </div>

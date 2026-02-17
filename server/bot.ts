@@ -183,7 +183,7 @@ async function showStep3(chatId: number) {
         [{ text: "\u{1F381} \u0417\u0430\u0431\u0440\u0430\u0442\u0438 \u0431\u043E\u043D\u0443\u0441", callback_data: "claim_bonus" }],
         [{ text: "\u{1F4B3} \u041F\u043E\u043F\u043E\u0432\u043D\u0438\u0442\u0438", callback_data: "go_payment" }],
         [{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }],
-        [{ text: "\u{1F4CB} \u041F\u0440\u0430\u0432\u0438\u043B\u0430", callback_data: "rules" }, { text: "\u{1F3E0} Home", callback_data: "go_home" }],
+        [{ text: "\u{1F4CB} \u041F\u0440\u0430\u0432\u0438\u043B\u0430", callback_data: "rules" }, { text: "\u{1F3E0} \u0413\u043E\u043B\u043E\u0432\u043D\u0430", callback_data: "go_home" }],
       ],
     },
   });
@@ -197,7 +197,7 @@ async function showPaymentStep1(chatId: number) {
   }
   rows.push([{ text: "\u270F\uFE0F \u0412\u0432\u0435\u0441\u0442\u0438 \u0432\u0440\u0443\u0447\u043D\u0443", callback_data: "custom_amount" }]);
   rows.push([{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }]);
-  rows.push([{ text: "\u{1F3E0} Home", callback_data: "go_home" }]);
+  rows.push([{ text: "\u{1F3E0} \u0413\u043E\u043B\u043E\u0432\u043D\u0430", callback_data: "go_home" }]);
 
   await bot!.sendMessage(chatId, "\u{1F4B3} \u041E\u0431\u0435\u0440\u0456\u0442\u044C \u0441\u0443\u043C\u0443 \u043F\u043E\u043F\u043E\u0432\u043D\u0435\u043D\u043D\u044F:", {
     reply_markup: { inline_keyboard: rows },
@@ -210,7 +210,7 @@ async function showPaymentStep2(chatId: number, amount: number) {
     reply_markup: {
       inline_keyboard: [
         [{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }],
-        [{ text: "\u{1F3E0} Home", callback_data: "go_home" }],
+        [{ text: "\u{1F3E0} \u0413\u043E\u043B\u043E\u0432\u043D\u0430", callback_data: "go_home" }],
       ],
     },
   });
@@ -276,7 +276,7 @@ async function showPaymentStep3(chatId: number, amount: number, playerId: string
         inline_keyboard: [
           [{ text: "\u{1F504} \u041F\u0435\u0440\u0435\u0432\u0456\u0440\u0438\u0442\u0438 \u043E\u043F\u043B\u0430\u0442\u0443", callback_data: `check_payment_${paymentId}` }],
           [{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }],
-          [{ text: "\u{1F3E0} Home", callback_data: "go_home" }],
+          [{ text: "\u{1F3E0} \u0413\u043E\u043B\u043E\u0432\u043D\u0430", callback_data: "go_home" }],
         ],
       },
     });
@@ -291,7 +291,7 @@ async function showPaymentStep3(chatId: number, amount: number, playerId: string
         [{ text: "\u{1F4B3} \u041E\u043F\u043B\u0430\u0442\u0438\u0442\u0438", url: payLink }],
         [{ text: "\u{1F504} \u041F\u0435\u0440\u0435\u0432\u0456\u0440\u0438\u0442\u0438 \u043E\u043F\u043B\u0430\u0442\u0443", callback_data: `check_payment_${paymentId}` }],
         [{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }],
-        [{ text: "\u{1F3E0} Home", callback_data: "go_home" }],
+        [{ text: "\u{1F3E0} \u0413\u043E\u043B\u043E\u0432\u043D\u0430", callback_data: "go_home" }],
       ],
     },
   });
@@ -367,7 +367,7 @@ export function startBot() {
       await bot!.sendMessage(chatId, rulesText, {
         reply_markup: {
           inline_keyboard: [
-            [{ text: "\u{1F3E0} Home", callback_data: "go_home" }],
+            [{ text: "\u{1F3E0} \u0413\u043E\u043B\u043E\u0432\u043D\u0430", callback_data: "go_home" }],
           ],
         },
       });
@@ -434,7 +434,7 @@ export function startBot() {
         reply_markup: {
           inline_keyboard: [
             [{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }],
-            [{ text: "\u{1F3E0} Home", callback_data: "go_home" }],
+            [{ text: "\u{1F3E0} \u0413\u043E\u043B\u043E\u0432\u043D\u0430", callback_data: "go_home" }],
           ],
         },
       });
@@ -455,7 +455,7 @@ export function startBot() {
           reply_markup: {
             inline_keyboard: [
               [{ text: "\u{1F4B3} \u041F\u043E\u043F\u043E\u0432\u043D\u0438\u0442\u0438", callback_data: "go_payment" }],
-              [{ text: "\u{1F3E0} Home", callback_data: "go_home" }],
+              [{ text: "\u{1F3E0} \u0413\u043E\u043B\u043E\u0432\u043D\u0430", callback_data: "go_home" }],
             ],
           },
         });
@@ -513,7 +513,7 @@ export function startBot() {
           reply_markup: {
             inline_keyboard: [
               [{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }],
-              [{ text: "\u{1F3E0} Home", callback_data: "go_home" }],
+              [{ text: "\u{1F3E0} \u0413\u043E\u043B\u043E\u0432\u043D\u0430", callback_data: "go_home" }],
             ],
           },
         });
@@ -531,7 +531,7 @@ export function startBot() {
           reply_markup: {
             inline_keyboard: [
               [{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }],
-              [{ text: "\u{1F3E0} Home", callback_data: "go_home" }],
+              [{ text: "\u{1F3E0} \u0413\u043E\u043B\u043E\u0432\u043D\u0430", callback_data: "go_home" }],
             ],
           },
         });

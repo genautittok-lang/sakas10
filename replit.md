@@ -59,3 +59,24 @@ Users go through: HOME -> STEP_1 (install app) -> STEP_2 (join club) -> STEP_3 (
 
 ## Seed Data
 On first run, creates demo users, payments, messages, and default config values for testing.
+
+## Production Build & Railway Deployment
+- `npm run build` - Builds client (Vite) and server (esbuild) into `dist/`
+- `npm run start` - Runs production server from `dist/index.cjs`
+- `railway.toml` - Railway deployment config (nixpacks builder, healthcheck on /api/stats)
+
+### Required Environment Variables for Railway
+1. `DATABASE_URL` - PostgreSQL connection string (Railway Postgres addon)
+2. `TELEGRAM_BOT_TOKEN` - Bot token from @BotFather
+3. `PUBLIC_BASE_URL` - Your Railway deployment URL (e.g., https://your-app.up.railway.app)
+4. `PORT` - Auto-set by Railway
+
+### Bot Configuration (set via Admin Panel after deploy)
+- `manager_chat_id`, `club_id`, payment settings, text content - all configurable in Settings page
+
+## Recent Changes (2026-02-17)
+- Added messageReplies table for two-way messaging (web panel + Telegram)
+- Fixed all bot strings to proper Ukrainian (removed English "Home" buttons)
+- Added node-telegram-bot-api to production build allowlist
+- UI redesign: improved dashboard with auto-refresh, search filters on users/payments, collapsible config sections
+- Added railway.toml for Railway deployment
