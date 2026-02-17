@@ -72,7 +72,11 @@ export async function registerRoutes(
   app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
   startBot();
-  await seedData();
+  try {
+    await seedData();
+  } catch (e) {
+    console.error("Seed data error (tables may not exist yet):", e);
+  }
 
   app.post("/api/upload", upload.single("file"), (req, res) => {
     if (!req.file) {

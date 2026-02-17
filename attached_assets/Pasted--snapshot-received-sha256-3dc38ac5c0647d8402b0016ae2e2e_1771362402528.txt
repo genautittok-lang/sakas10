@@ -1,0 +1,142 @@
+[snapshot] received sha256:3dc38ac5c0647d8402b0016ae2e2e71d959cb1121fc9254731cd5445a35b36da md5:d2e8b8f4c763cab1ecd078a3943e8026
+receiving snapshot
+199.9 KB
+533ms
+found 'railway.toml' at 'railway.toml'
+analyzing snapshot
+199.9 KB
+12ms
+uploading snapshot
+199.9 KB
+scheduling build on Metal builder "builder-pqncii"
+fetched snapshot sha256:3dc38ac5c0647d8402b0016ae2e2e71d959cb1121fc9254731cd5445a35b36da (205 kB bytes)
+fetching snapshot
+199.9 KB
+55ms
+unpacking archive
+840 KB
+18ms
+using build driver nixpacks-v1.41.0
+ 
+╔═════════════════════ Nixpacks v1.41.0 ═════════════════════╗
+║ setup      │ nodejs_18, npm-9_x, openssl                   ║
+║────────────────────────────────────────────────────────────║
+║ caddy      │ pkgs: caddy                                   ║
+║            │ cmds: caddy fmt --overwrite /assets/Caddyfile ║
+║────────────────────────────────────────────────────────────║
+║ install    │ npm ci                                        ║
+║────────────────────────────────────────────────────────────║
+║ build      │ npm run build                                 ║
+║────────────────────────────────────────────────────────────║
+║ start      │ npm run start                                 ║
+╚════════════════════════════════════════════════════════════╝
+ 
+ 
+Saved output to:
+  snapshot-target-unpack
+scheduling build on Metal builder "builder-pqncii"
+
+internal
+load build definition from Dockerfile
+0ms
+
+internal
+load metadata for ghcr.io/railwayapp/nixpacks:ubuntu-1745885067
+6s
+
+internal
+load .dockerignore
+0ms
+SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "TELEGRAM_BOT_TOKEN") (line 13)(https://docs.docker.com/go/dockerfile/rule/secrets-used-in-arg-or-env/)
+ details: Sensitive data should not be used in the ARG or ENV commands
+SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ENV "TELEGRAM_BOT_TOKEN") (line 14)(https://docs.docker.com/go/dockerfile/rule/secrets-used-in-arg-or-env/)
+ details: Sensitive data should not be used in the ARG or ENV commands
+UndefinedVar: Usage of undefined variable '$NIXPACKS_PATH' (line 24)(https://docs.docker.com/go/dockerfile/rule/undefined-var/)
+ details: Variables should be defined before their use
+
+internal
+load build context
+0ms
+
+stage-0
+FROM ghcr.io/railwayapp/nixpacks:ubuntu-1745885067@sha256:d45c89d80e13d7ad0fd555b5130f22a866d9dd10e861f589932303ef2314c7de
+18ms
+
+stage-0
+RUN nix-env -if .nixpacks/nixpkgs-ffeebf0acf3ae8b29f8c7049cd911b9636efd7e7.nix && nix-collect-garbage -d cached
+0ms
+
+stage-0
+COPY .nixpacks/assets /assets/ cached
+0ms
+
+stage-0
+RUN nix-env -if .nixpacks/nixpkgs-ba913eda2df8eb72147259189d55932012df6301.nix && nix-collect-garbage -d cached
+0ms
+
+stage-0
+COPY .nixpacks/nixpkgs-ba913eda2df8eb72147259189d55932012df6301.nix .nixpacks/nixpkgs-ba913eda2df8eb72147259189d55932012df6301.nix cached
+0ms
+
+stage-0
+WORKDIR /app/ cached
+0ms
+
+stage-0
+COPY .nixpacks/nixpkgs-ffeebf0acf3ae8b29f8c7049cd911b9636efd7e7.nix .nixpacks/nixpkgs-ffeebf0acf3ae8b29f8c7049cd911b9636efd7e7.nix cached
+0ms
+
+stage-0
+COPY . /app/.
+205ms
+
+stage-0
+RUN  caddy fmt --overwrite /assets/Caddyfile
+533ms
+
+stage-0
+COPY . /app/.
+283ms
+
+stage-0
+RUN npm ci
+13s
+Run `npm audit` for details.
+
+stage-0
+COPY . /app/.
+614ms
+
+stage-0
+RUN npm run build
+7s
+⚡ Done in 245ms
+
+stage-0
+RUN printf '\nPATH=/app/node_modules/.bin:$PATH' >> /root/.profile
+344ms
+
+stage-0
+COPY . /app
+327ms
+
+exporting to docker image format
+7s
+containerimage.descriptor: eyJtZWRpYVR5cGUiOiJhcHBsaWNhdGlvbi92bmQub2NpLmltYWdlLm1hbmlmZXN0LnYxK2pzb24iLCJkaWdlc3QiOiJzaGEyNTY6Y2NkYzFmMDhmZGQ0YmY2N2MxMWVjYzc0ODc2M2QzZTcwMDhlMGFmZTc4N2Q1NTQ0MGVhMWZhNGRhNjc3ZWM4OCIsInNpemUiOjM3MDcsImFubm90YXRpb25zIjp7Im9yZy5vcGVuY29udGFpbmVycy5pbWFnZS5jcmVhdGVkIjoiMjAyNi0wMi0xN1QyMTowNDowM1oifSwicGxhdGZvcm0iOnsiYXJjaGl0ZWN0dXJlIjoiYW1kNjQiLCJvcyI6ImxpbnV4In19
+containerimage.config.digest: sha256:84db370ac8c54c168ca6486803cc1abbe105aa3446eced76bf90a2729add71c3
+containerimage.digest: sha256:ccdc1f08fdd4bf67c11ecc748763d3e7008e0afe787d55440ea1fa4da677ec88
+image push
+448.4 MB / 448.6 MB
+10.6s
+ 
+====================
+Starting Healthcheck
+====================
+Path: /api/stats
+Retry window: 5m0s
+ 
+Attempt #1 failed with service unavailable. Continuing to retry for 4m49s
+Attempt #2 failed with service unavailable. Continuing to retry for 4m38s
+Attempt #3 failed with service unavailable. Continuing to retry for 4m26s
+Attempt #4 failed with service unavailable. Continuing to retry for 4m12s
+Attempt #5 failed with service unavailable. Continuing to retry for 3m54s

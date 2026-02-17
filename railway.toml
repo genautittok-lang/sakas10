@@ -1,6 +1,6 @@
 [build]
 builder = "nixpacks"
-buildCommand = "npm run build"
+buildCommand = "npm run build && npx drizzle-kit push --force"
 
 [deploy]
 startCommand = "npm run start"
