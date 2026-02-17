@@ -40,7 +40,16 @@ export const managerMessages = pgTable("manager_messages", {
   username: text("username"),
   userStep: text("user_step"),
   reason: text("reason"),
+  messageText: text("message_text"),
   resolved: boolean("resolved").notNull().default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const messageReplies = pgTable("message_replies", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  messageId: varchar("message_id").notNull(),
+  text: text("text").notNull(),
+  source: text("source").notNull().default("web"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -48,6 +57,7 @@ export const insertBotUserSchema = createInsertSchema(botUsers).omit({ id: true,
 export const insertPaymentSchema = createInsertSchema(payments).omit({ id: true, createdAt: true });
 export const insertBotConfigSchema = createInsertSchema(botConfig).omit({ id: true });
 export const insertManagerMessageSchema = createInsertSchema(managerMessages).omit({ id: true, createdAt: true });
+export const insertMessageReplySchema = createInsertSchema(messageReplies).omit({ id: true, createdAt: true });
 
 export type InsertBotUser = z.infer<typeof insertBotUserSchema>;
 export type BotUser = typeof botUsers.$inferSelect;
@@ -57,6 +67,8 @@ export type BotConfig = typeof botConfig.$inferSelect;
 export type InsertBotConfig = z.infer<typeof insertBotConfigSchema>;
 export type ManagerMessage = typeof managerMessages.$inferSelect;
 export type InsertManagerMessage = z.infer<typeof insertManagerMessageSchema>;
+export type MessageReply = typeof messageReplies.$inferSelect;
+export type InsertMessageReply = z.infer<typeof insertMessageReplySchema>;
 
 export const users = pgTable("users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),

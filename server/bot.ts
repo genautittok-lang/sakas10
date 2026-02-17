@@ -33,6 +33,8 @@ async function getConfigValue(key: string, fallback: string): Promise<string> {
   return val || fallback;
 }
 
+const managerReplyState: Map<string, string> = new Map();
+
 async function sendManagerNotification(tgId: string, username: string | null, step: string, reason: string) {
   if (!bot) return;
   const managerChatId = await getConfigValue("manager_chat_id", "");
@@ -41,7 +43,7 @@ async function sendManagerNotification(tgId: string, username: string | null, st
     return;
   }
 
-  await storage.createManagerMessage({
+  const msg = await storage.createManagerMessage({
     tgId,
     username: username || undefined,
     userStep: step,
@@ -56,7 +58,13 @@ async function sendManagerNotification(tgId: string, username: string | null, st
     `\u{1F4AC} Причина: ${reason}`;
 
   try {
-    await bot.sendMessage(managerChatId, text);
+    const sent = await bot.sendMessage(managerChatId, text, {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: "\u270F\uFE0F \u0412\u0456\u0434\u043F\u043E\u0432\u0456\u0441\u0442\u0438", callback_data: `reply_to_${msg.id}_${tgId}` }],
+        ],
+      },
+    });
   } catch (err) {
     log(`Failed to send manager notification: ${err}`, "bot");
   }
@@ -326,6 +334,33 @@ export function startBot() {
       return;
     }
 
+    if (data.startsWith("reply_to_")) {
+      const parts = data.replace("reply_to_", "").split("_");
+      const targetTgId = parts.pop()!;
+      const messageId = parts.join("_");
+      const managerChatId = await getConfigValue("manager_chat_id", "");
+      if (String(chatId) === managerChatId) {
+        managerReplyState.set(managerChatId, `${messageId}:${targetTgId}`);
+        await bot!.sendMessage(chatId, `\u270F\uFE0F \u041D\u0430\u043F\u0438\u0448\u0456\u0442\u044C \u0432\u0456\u0434\u043F\u043E\u0432\u0456\u0434\u044C \u043A\u043E\u0440\u0438\u0441\u0442\u0443\u0432\u0430\u0447\u0443 (ID: ${targetTgId}):\n\n\u0412\u0456\u0434\u043F\u0440\u0430\u0432\u0442\u0435 \u0442\u0435\u043A\u0441\u0442\u043E\u0432\u0435 \u043F\u043E\u0432\u0456\u0434\u043E\u043C\u043B\u0435\u043D\u043D\u044F \u0456 \u044F \u043F\u0435\u0440\u0435\u0448\u043B\u044E \u0439\u043E\u0433\u043E.`, {
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: "\u274C \u0421\u043A\u0430\u0441\u0443\u0432\u0430\u0442\u0438", callback_data: "cancel_reply" }],
+            ],
+          },
+        });
+      }
+      return;
+    }
+
+    if (data === "cancel_reply") {
+      const managerChatId = await getConfigValue("manager_chat_id", "");
+      if (String(chatId) === managerChatId) {
+        managerReplyState.delete(managerChatId);
+        await bot!.sendMessage(chatId, "\u274C \u0412\u0456\u0434\u043F\u043E\u0432\u0456\u0434\u044C \u0441\u043A\u0430\u0441\u043E\u0432\u0430\u043D\u043E.");
+      }
+      return;
+    }
+
     if (data === "rules") {
       const rulesText = await getConfigValue("rules_text",
         "\u{1F4CB} \u041F\u0440\u0430\u0432\u0438\u043B\u0430:\n\n1. \u0412\u0441\u0442\u0430\u043D\u043E\u0432\u0456\u0442\u044C \u0434\u043E\u0434\u0430\u0442\u043E\u043A\n2. \u0412\u0441\u0442\u0443\u043F\u0456\u0442\u044C \u0434\u043E \u043A\u043B\u0443\u0431\u0443\n3. \u041E\u0442\u0440\u0438\u043C\u0430\u0439\u0442\u0435 \u0431\u043E\u043D\u0443\u0441\n4. \u041F\u043E\u043F\u043E\u0432\u043D\u044E\u0439\u0442\u0435 \u0440\u0430\u0445\u0443\u043D\u043E\u043A");
@@ -444,6 +479,30 @@ export function startBot() {
 
     const chatId = msg.chat.id;
     const tgId = String(msg.from.id);
+
+    const managerChatId = await getConfigValue("manager_chat_id", "");
+    if (managerChatId && String(chatId) === managerChatId) {
+      const replyInfo = managerReplyState.get(managerChatId);
+      if (replyInfo && msg.text) {
+        const [messageId, targetTgId] = replyInfo.split(":");
+        managerReplyState.delete(managerChatId);
+
+        await sendMessageToUser(targetTgId, `\u{1F4AC} \u0412\u0456\u0434\u043F\u043E\u0432\u0456\u0434\u044C \u043C\u0435\u043D\u0435\u0434\u0436\u0435\u0440\u0430:\n\n${msg.text}`);
+
+        if (messageId) {
+          await storage.createMessageReply({
+            messageId,
+            text: msg.text,
+            source: "telegram",
+          });
+        }
+
+        await bot!.sendMessage(chatId, `\u2705 \u0412\u0456\u0434\u043F\u043E\u0432\u0456\u0434\u044C \u0432\u0456\u0434\u043F\u0440\u0430\u0432\u043B\u0435\u043D\u043E \u043A\u043E\u0440\u0438\u0441\u0442\u0443\u0432\u0430\u0447\u0443 ${targetTgId}!`);
+        return;
+      }
+      return;
+    }
+
     const user = await storage.getBotUser(tgId);
     if (!user) return;
 

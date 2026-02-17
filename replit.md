@@ -18,9 +18,9 @@ Users go through: HOME -> STEP_1 (install app) -> STEP_2 (join club) -> STEP_3 (
 - Convert2pay integration for payment processing
 
 ## Key Files
-- `shared/schema.ts` - Data models (botUsers, payments, botConfig, managerMessages)
-- `server/bot.ts` - Telegram bot logic with Convert2pay integration
-- `server/routes.ts` - API endpoints including file upload and payment webhooks
+- `shared/schema.ts` - Data models (botUsers, payments, botConfig, managerMessages, messageReplies)
+- `server/bot.ts` - Telegram bot logic with Convert2pay integration + manager reply handling
+- `server/routes.ts` - API endpoints including file upload, payment webhooks, message replies
 - `server/storage.ts` - Database CRUD operations
 - `server/db.ts` - Database connection
 - `client/src/pages/` - Admin panel pages (dashboard, users, payments, messages, config)
@@ -50,7 +50,9 @@ Users go through: HOME -> STEP_1 (install app) -> STEP_2 (join club) -> STEP_3 (
 - PATCH /api/payments/:id/status - Update payment status
 - POST /api/payments/webhook - Convert2pay webhook (requires X-Webhook-Secret header)
 - GET /api/messages - Manager messages
+- GET /api/messages/:id - Message detail with replies
 - PATCH /api/messages/:id/resolve - Resolve message
+- POST /api/messages/:id/reply - Reply to message (sends to user via bot)
 - GET /api/config - Bot configuration
 - POST /api/config - Save config value
 - POST /api/upload - File upload (videos/images, max 50MB)

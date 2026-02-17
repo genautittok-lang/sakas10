@@ -1,11 +1,12 @@
 import { eq, desc, and, count } from "drizzle-orm";
 import { db } from "./db";
 import {
-  botUsers, payments, botConfig, managerMessages,
+  botUsers, payments, botConfig, managerMessages, messageReplies,
   type BotUser, type InsertBotUser,
   type Payment, type InsertPayment,
   type BotConfig, type InsertBotConfig,
   type ManagerMessage, type InsertManagerMessage,
+  type MessageReply, type InsertMessageReply,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -31,6 +32,9 @@ export interface IStorage {
   getAllManagerMessages(): Promise<ManagerMessage[]>;
   resolveManagerMessage(id: string): Promise<void>;
   countPendingMessages(): Promise<number>;
+  getManagerMessage(id: string): Promise<ManagerMessage | undefined>;
+  createMessageReply(reply: InsertMessageReply): Promise<MessageReply>;
+  getMessageReplies(messageId: string): Promise<MessageReply[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -125,6 +129,20 @@ export class DatabaseStorage implements IStorage {
   async countBotUsers(): Promise<number> {
     const [result] = await db.select({ count: count() }).from(botUsers);
     return result?.count || 0;
+  }
+
+  async getManagerMessage(id: string): Promise<ManagerMessage | undefined> {
+    const [message] = await db.select().from(managerMessages).where(eq(managerMessages.id, id));
+    return message;
+  }
+
+  async createMessageReply(reply: InsertMessageReply): Promise<MessageReply> {
+    const [created] = await db.insert(messageReplies).values(reply).returning();
+    return created;
+  }
+
+  async getMessageReplies(messageId: string): Promise<MessageReply[]> {
+    return db.select().from(messageReplies).where(eq(messageReplies.messageId, messageId)).orderBy(desc(messageReplies.createdAt));
   }
 }
 

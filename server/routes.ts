@@ -178,10 +178,39 @@ export async function registerRoutes(
     res.json(messages);
   });
 
+  app.get("/api/messages/:id", async (req, res) => {
+    const { id } = req.params;
+    const message = await storage.getManagerMessage(id);
+    if (!message) {
+      return res.status(404).json({ message: "Message not found" });
+    }
+    const replies = await storage.getMessageReplies(id);
+    res.json({ ...message, replies });
+  });
+
   app.patch("/api/messages/:id/resolve", async (req, res) => {
     const { id } = req.params;
     await storage.resolveManagerMessage(id);
     res.json({ success: true });
+  });
+
+  app.post("/api/messages/:id/reply", async (req, res) => {
+    const { id } = req.params;
+    const { text } = req.body;
+    if (!text || !text.trim()) {
+      return res.status(400).json({ message: "Text is required" });
+    }
+    const message = await storage.getManagerMessage(id);
+    if (!message) {
+      return res.status(404).json({ message: "Message not found" });
+    }
+    const reply = await storage.createMessageReply({
+      messageId: id,
+      text: text.trim(),
+      source: "web",
+    });
+    await sendMessageToUser(message.tgId, `\u{1F4AC} \u0412\u0456\u0434\u043F\u043E\u0432\u0456\u0434\u044C \u043C\u0435\u043D\u0435\u0434\u0436\u0435\u0440\u0430:\n\n${text.trim()}`);
+    res.json(reply);
   });
 
   app.get("/api/config", async (_req, res) => {
