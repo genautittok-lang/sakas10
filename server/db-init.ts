@@ -85,10 +85,9 @@ export async function initDatabase() {
 
   console.log("Database tables initialized successfully.");
 
-  const demoIds = ['100001', '100002', '100003', '100004'];
-  await db.execute(sql`DELETE FROM message_replies WHERE message_id IN (SELECT id FROM manager_messages WHERE tg_id = ANY(${demoIds}))`);
-  await db.execute(sql`DELETE FROM manager_messages WHERE tg_id = ANY(${demoIds})`);
-  await db.execute(sql`DELETE FROM payments WHERE tg_id = ANY(${demoIds})`);
-  await db.execute(sql`DELETE FROM bot_users WHERE tg_id = ANY(${demoIds})`);
+  await db.execute(sql`DELETE FROM message_replies WHERE message_id IN (SELECT id FROM manager_messages WHERE tg_id IN ('100001','100002','100003','100004'))`);
+  await db.execute(sql`DELETE FROM manager_messages WHERE tg_id IN ('100001','100002','100003','100004')`);
+  await db.execute(sql`DELETE FROM payments WHERE tg_id IN ('100001','100002','100003','100004')`);
+  await db.execute(sql`DELETE FROM bot_users WHERE tg_id IN ('100001','100002','100003','100004')`);
   console.log("Demo data cleanup completed.");
 }
