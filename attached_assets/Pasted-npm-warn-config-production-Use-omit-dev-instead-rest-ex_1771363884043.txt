@@ -1,0 +1,17 @@
+npm warn config production Use `--omit=dev` instead.
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.cjs
+Initializing database tables...
+Starting Container
+Database tables initialized successfully.
+Demo data cleanup completed.
+9:30:34 PM [bot] Telegram bot started
+9:30:34 PM [express] serving on port 8080
+9:30:35 PM [express] GET /api/stats 200 in 34ms :: {"totalUsers":0,"stepCounts":{"HOME":0,"STEP_1":0,"STEP_2":0,"STEP_3":0,"PAYMENT":0},"bonusClaimed":0,"totalPayments":0,"paidCount":0,"totalRevenue":0,"pendingMessages":0,"pendingPayments":0}
+error: [polling_error] {"code":"ETELEGRAM","message":"ETELEGRAM: 409 Conflict: terminated by other getUpdates request; make sure that only one bot instance is running"}
+9:30:51 PM [express] GET /api/stats 200 in 197ms :: {"totalUsers":0,"stepCounts":{"HOME":0,"STEP_1":0,"STEP_2":0,"STEP_3":0,"PAYMENT":0},"bonusClaimed":0,"totalPayments":0,"paidCount":0,"totalRevenue":0,"pendingMessages":0,"pendingPayments":0}
+9:30:53 PM [express] GET /api/messages 200 in 9ms :: []
+9:30:54 PM [express] GET /api/payments 200 in 8ms :: []
+9:30:56 PM [express] GET /api/config 200 in 7ms :: [{"id":"afb7a268-0c7c-45af-bc11-538125600252","key":"club_id","value":"CLUB777"},{"id":"f3d76864-19b2-427f-ba0f-53d14c8cd2ff","key":"welcome_text","value":"Ласкаво просимо до нашого клубу! Оберіть дію:"},{"id":"6f399550-4109-4660-b84f-bb03341ef2bf","key":"step1_text","value":"Крок 1: Встановіть додаток\n\nОберіть вашу платформу та встановіть додаток:"},{"id":"b4a8ef57-6cdf-41e0-857c-a7b90f85ebe1","key":"step2_text","value":"Крок 2: Вступ до клубу\n\nЗнайдіть клуб за ID та приєднайтесь."},{"id":"2cff9f10-ff8d-4f8e-a624-51bd0a880738","key":"bonus_text","value":"Крок 3: Бонус\n\nВітаємо! Ви можете отримати бонус за реєстрацію."},{"id":"5ef0b664-ec80-4bcd-9a7b-9b056889aa06","key":"payment_amounts","value":"100, 200, 500, 1000, 2000, 5000"}]
+9:31:09 PM [express] GET /api/stats 304 in 195ms :: {"totalUsers":0,"stepCounts":{"HOME":0,"STEP_1":0,"STEP_2":0,"STEP_3":0,"PAYMENT":0},"bonusClaimed":0,"totalPayments":0,"paidCount":0,"totalRevenue":0,"pendingMessages":0,"pendingPayments":0}
+9:31:09 PM [express] GET /api/stats 304 in 27ms :: {"totalUsers":0,"stepCounts":{"HOME":0,"STEP_1":0,"STEP_2":0,"STEP_3":0,"PAYMENT":0},"bonusClaimed":0,"totalPayments":0,"paidCount":0,"totalRevenue":0,"pendingMessages":0,"pendingPayments":0}
