@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, CreditCard, MessageSquare, Gift, TrendingUp, Activity } from "lucide-react";
+import { Users, CreditCard, MessageSquare, Gift, TrendingUp, Activity, ChevronDown } from "lucide-react";
 
 interface Stats {
   totalUsers: number;
@@ -20,6 +20,14 @@ const STEP_LABELS: Record<string, string> = {
   PAYMENT: "Оплата",
 };
 
+const STEP_COLORS = {
+  HOME: { bg: "bg-blue-500/10", text: "text-blue-500", dark: "dark:bg-blue-400/10 dark:text-blue-400", gradient: "from-blue-500 to-blue-600" },
+  STEP_1: { bg: "bg-cyan-500/10", text: "text-cyan-500", dark: "dark:bg-cyan-400/10 dark:text-cyan-400", gradient: "from-cyan-500 to-cyan-600" },
+  STEP_2: { bg: "bg-purple-500/10", text: "text-purple-500", dark: "dark:bg-purple-400/10 dark:text-purple-400", gradient: "from-purple-500 to-purple-600" },
+  STEP_3: { bg: "bg-pink-500/10", text: "text-pink-500", dark: "dark:bg-pink-400/10 dark:text-pink-400", gradient: "from-pink-500 to-pink-600" },
+  PAYMENT: { bg: "bg-emerald-500/10", text: "text-emerald-500", dark: "dark:bg-emerald-400/10 dark:text-emerald-400", gradient: "from-emerald-500 to-emerald-600" },
+};
+
 export default function Dashboard() {
   const { data: stats, isLoading } = useQuery<Stats>({
     queryKey: ["/api/stats"],
@@ -27,16 +35,21 @@ export default function Dashboard() {
 
   if (isLoading || !stats) {
     return (
-      <div className="p-6 space-y-6">
-        <h1 className="text-2xl font-semibold" data-testid="text-dashboard-title">Панель управління</h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map(i => (
+      <div className="p-6 space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold" data-testid="text-dashboard-title">Панель управління</h1>
+          <p className="text-muted-foreground mt-2">Огляд активності бота</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[1, 2, 3, 4, 5, 6].map(i => (
             <Card key={i}>
-              <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+              <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0 pb-4">
                 <div className="h-4 w-24 bg-muted rounded animate-pulse" />
+                <div className="h-10 w-10 bg-muted rounded-lg animate-pulse" />
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-2">
                 <div className="h-8 w-16 bg-muted rounded animate-pulse" />
+                <div className="h-3 w-20 bg-muted rounded animate-pulse" />
               </CardContent>
             </Card>
           ))}
@@ -46,58 +59,83 @@ export default function Dashboard() {
   }
 
   const statCards = [
-    { title: "Користувачі", value: stats.totalUsers, icon: Users, color: "text-blue-500 dark:text-blue-400" },
-    { title: "Оплати", value: stats.paidCount, icon: CreditCard, color: "text-green-500 dark:text-green-400" },
-    { title: "Дохід", value: `${stats.totalRevenue} ₴`, icon: TrendingUp, color: "text-emerald-500 dark:text-emerald-400" },
-    { title: "Повідомлення", value: stats.pendingMessages, icon: MessageSquare, color: "text-orange-500 dark:text-orange-400" },
-    { title: "Бонуси", value: stats.bonusClaimed, icon: Gift, color: "text-purple-500 dark:text-purple-400" },
-    { title: "Всього оплат", value: stats.totalPayments, icon: Activity, color: "text-cyan-500 dark:text-cyan-400" },
+    { title: "Користувачі", value: stats.totalUsers, description: "всього у системі", icon: Users, bgColor: "bg-blue-500/10", textColor: "text-blue-500", darkClass: "dark:bg-blue-400/10 dark:text-blue-400" },
+    { title: "Оплати", value: stats.paidCount, description: "успішних операцій", icon: CreditCard, bgColor: "bg-green-500/10", textColor: "text-green-500", darkClass: "dark:bg-green-400/10 dark:text-green-400" },
+    { title: "Дохід", value: `${stats.totalRevenue} ₴`, description: "загальний дохід", icon: TrendingUp, bgColor: "bg-emerald-500/10", textColor: "text-emerald-500", darkClass: "dark:bg-emerald-400/10 dark:text-emerald-400" },
+    { title: "Повідомлення", value: stats.pendingMessages, description: "у очікуванні", icon: MessageSquare, bgColor: "bg-orange-500/10", textColor: "text-orange-500", darkClass: "dark:bg-orange-400/10 dark:text-orange-400" },
+    { title: "Бонуси", value: stats.bonusClaimed, description: "виданих користувачам", icon: Gift, bgColor: "bg-purple-500/10", textColor: "text-purple-500", darkClass: "dark:bg-purple-400/10 dark:text-purple-400" },
+    { title: "Всього оплат", value: stats.totalPayments, description: "всіх платежів", icon: Activity, bgColor: "bg-cyan-500/10", textColor: "text-cyan-500", darkClass: "dark:bg-cyan-400/10 dark:text-cyan-400" },
   ];
 
-  return (
-    <div className="p-6 space-y-6">
-      <h1 className="text-2xl font-semibold" data-testid="text-dashboard-title">Панель управління</h1>
+  const stepOrder = ["HOME", "STEP_1", "STEP_2", "STEP_3", "PAYMENT"];
+  const orderedSteps = stepOrder.filter(step => step in stats.stepCounts);
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {statCards.map((card) => (
-          <Card key={card.title} data-testid={`card-stat-${card.title}`}>
-            <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">{card.title}</CardTitle>
-              <card.icon className={`h-4 w-4 ${card.color}`} />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{card.value}</div>
-            </CardContent>
-          </Card>
-        ))}
+  return (
+    <div className="p-6 space-y-8">
+      <div>
+        <h1 className="text-3xl font-bold" data-testid="text-dashboard-title">Панель управління</h1>
+        <p className="text-muted-foreground mt-2">Огляд активності бота</p>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Воронка користувачів</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {Object.entries(stats.stepCounts).map(([step, count]) => {
-              const percentage = stats.totalUsers > 0 ? (count / stats.totalUsers) * 100 : 0;
-              return (
-                <div key={step} className="space-y-1" data-testid={`funnel-step-${step}`}>
-                  <div className="flex items-center justify-between gap-2 flex-wrap">
-                    <span className="text-sm font-medium">{STEP_LABELS[step] || step}</span>
-                    <span className="text-sm text-muted-foreground">{count} ({percentage.toFixed(0)}%)</span>
-                  </div>
-                  <div className="h-2 rounded-full bg-muted overflow-hidden">
-                    <div
-                      className="h-full rounded-full bg-primary transition-all duration-500"
-                      style={{ width: `${percentage}%` }}
-                    />
-                  </div>
+      <div>
+        <h2 className="text-lg font-semibold mb-4">Статистика</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {statCards.map((card) => (
+            <Card key={card.title} data-testid={`card-stat-${card.title}`}>
+              <CardHeader className="flex flex-row items-center justify-between gap-4 space-y-0 pb-4">
+                <CardTitle className="text-sm font-medium text-muted-foreground">{card.title}</CardTitle>
+                <div className={`${card.bgColor} ${card.darkClass} p-2.5 rounded-lg`}>
+                  <card.icon className={`h-5 w-5 ${card.textColor} ${card.darkClass.split(" ").pop()}`} />
                 </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
+              </CardHeader>
+              <CardContent className="space-y-1">
+                <div className="text-2xl font-bold">{card.value}</div>
+                <p className="text-xs text-muted-foreground">{card.description}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+
+      <div>
+        <h2 className="text-lg font-semibold mb-4">Воронка користувачів</h2>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="space-y-6">
+              {orderedSteps.map((step, index) => {
+                const count = stats.stepCounts[step];
+                const percentage = stats.totalUsers > 0 ? (count / stats.totalUsers) * 100 : 0;
+                const colors = STEP_COLORS[step as keyof typeof STEP_COLORS] || STEP_COLORS.HOME;
+                
+                return (
+                  <div key={step} data-testid={`funnel-step-${step}`}>
+                    <div className="flex items-center justify-between gap-4 mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className={`flex items-center justify-center w-7 h-7 rounded-full ${colors.bg} ${colors.dark}`}>
+                          <span className={`text-xs font-bold ${colors.text} ${colors.dark.split(" ").pop()}`}>{index + 1}</span>
+                        </div>
+                        <span className="text-sm font-medium">{STEP_LABELS[step] || step}</span>
+                      </div>
+                      <span className="text-sm font-semibold text-muted-foreground">{count} ({percentage.toFixed(1)}%)</span>
+                    </div>
+                    <div className="relative h-3 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className={`h-full rounded-full bg-gradient-to-r ${colors.gradient} transition-all duration-700`}
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
+                    {index < orderedSteps.length - 1 && (
+                      <div className="flex justify-center mt-3 opacity-40">
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

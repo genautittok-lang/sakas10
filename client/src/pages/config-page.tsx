@@ -1,13 +1,13 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState, useEffect, useRef } from "react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Save, Settings, Upload, Link as LinkIcon } from "lucide-react";
+import { Save, Settings, Upload, Link as LinkIcon, MessageSquare, Film, Smartphone, CreditCard, Cog } from "lucide-react";
 import type { BotConfig } from "@shared/schema";
 
 interface ConfigField {
@@ -36,6 +36,39 @@ const CONFIG_FIELDS: ConfigField[] = [
   { key: "convert2pay_merchant_id", label: "Convert2pay Merchant ID", description: "Ідентифікатор мерчанта Convert2pay", type: "text", placeholder: "merchant_123" },
   { key: "convert2pay_secret_key", label: "Convert2pay Secret Key", description: "Секретний ключ API Convert2pay", type: "text", placeholder: "sk_live_..." },
   { key: "convert2pay_currency", label: "Convert2pay валюта", description: "Код валюти (за замовчуванням UAH)", type: "text", placeholder: "UAH" },
+];
+
+const SECTIONS = [
+  {
+    title: "Основні",
+    description: "Головні ідентифікатори бота",
+    icon: Cog,
+    keys: ["manager_chat_id", "club_id"],
+  },
+  {
+    title: "Тексти бота",
+    description: "Повідомлення та інструкції для користувачів",
+    icon: MessageSquare,
+    keys: ["welcome_text", "step1_text", "step2_text", "bonus_text", "rules_text"],
+  },
+  {
+    title: "Медіа",
+    description: "Відео для кроків інструкції",
+    icon: Film,
+    keys: ["step1_video", "step2_video"],
+  },
+  {
+    title: "Посилання на додаток",
+    description: "URL для завантаження додатку на різні платформи",
+    icon: Smartphone,
+    keys: ["android_link", "ios_link", "windows_link"],
+  },
+  {
+    title: "Оплата",
+    description: "Налаштування платіжної системи Convert2pay",
+    icon: CreditCard,
+    keys: ["payment_amounts", "convert2pay_api_url", "convert2pay_merchant_id", "convert2pay_secret_key", "convert2pay_currency"],
+  },
 ];
 
 function VideoUploadField({
@@ -174,6 +207,11 @@ export default function ConfigPage() {
     },
   });
 
+  const fieldsByKey = CONFIG_FIELDS.reduce<Record<string, ConfigField>>((acc, field) => {
+    acc[field.key] = field;
+    return acc;
+  }, {});
+
   if (isLoading) {
     return (
       <div className="p-6 space-y-6">
@@ -188,57 +226,82 @@ export default function ConfigPage() {
   }
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center gap-2 flex-wrap">
-        <Settings className="h-6 w-6 text-muted-foreground" />
-        <h1 className="text-2xl font-semibold" data-testid="text-config-title">Налаштування бота</h1>
+    <div className="p-6 space-y-8">
+      <div className="space-y-1">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Settings className="h-6 w-6 text-muted-foreground" />
+          <h1 className="text-2xl font-semibold" data-testid="text-config-title">Налаштування бота</h1>
+        </div>
+        <p className="text-sm text-muted-foreground" data-testid="text-config-subtitle">Керуйте налаштуваннями бота</p>
       </div>
 
-      <div className="grid gap-4">
-        {CONFIG_FIELDS.map((field) => (
-          <Card key={field.key}>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base">{field.label}</CardTitle>
-              <CardDescription className="text-sm">{field.description}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex gap-2 items-end flex-wrap">
-                <div className="flex-1 min-w-[200px]">
-                  {field.type === "video" ? (
-                    <VideoUploadField
-                      fieldKey={field.key}
-                      value={values[field.key] || ""}
-                      onChange={(val) => setValues(prev => ({ ...prev, [field.key]: val }))}
-                      placeholder={field.placeholder}
-                    />
-                  ) : field.type === "textarea" ? (
-                    <Textarea
-                      value={values[field.key] || ""}
-                      onChange={(e) => setValues(prev => ({ ...prev, [field.key]: e.target.value }))}
-                      placeholder={field.placeholder}
-                      rows={3}
-                      data-testid={`input-config-${field.key}`}
-                    />
-                  ) : (
-                    <Input
-                      value={values[field.key] || ""}
-                      onChange={(e) => setValues(prev => ({ ...prev, [field.key]: e.target.value }))}
-                      placeholder={field.placeholder}
-                      data-testid={`input-config-${field.key}`}
-                    />
-                  )}
-                </div>
-                <Button
-                  onClick={() => saveConfig.mutate({ key: field.key, value: values[field.key] || "" })}
-                  disabled={saveConfig.isPending}
-                  data-testid={`button-save-${field.key}`}
-                >
-                  <Save className="h-4 w-4 mr-1" />
-                  Зберегти
-                </Button>
+      <div className="space-y-8">
+        {SECTIONS.map((section) => (
+          <div key={section.title} className="space-y-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              <section.icon className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <h2 className="text-lg font-semibold" data-testid={`text-section-${section.title}`}>{section.title}</h2>
+                <p className="text-sm text-muted-foreground">{section.description}</p>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+            <Card>
+              <CardContent className="p-0">
+                {section.keys.map((key) => {
+                  const field = fieldsByKey[key];
+                  if (!field) return null;
+                  return (
+                    <div
+                      key={field.key}
+                      className="flex flex-col gap-3 p-4 border-b last:border-b-0"
+                      data-testid={`field-row-${field.key}`}
+                    >
+                      <div>
+                        <Label className="text-sm font-medium">{field.label}</Label>
+                        <p className="text-xs text-muted-foreground">{field.description}</p>
+                      </div>
+                      <div className="flex gap-2 items-end justify-between flex-wrap">
+                        <div className="flex-1 min-w-[200px]">
+                          {field.type === "video" ? (
+                            <VideoUploadField
+                              fieldKey={field.key}
+                              value={values[field.key] || ""}
+                              onChange={(val) => setValues(prev => ({ ...prev, [field.key]: val }))}
+                              placeholder={field.placeholder}
+                            />
+                          ) : field.type === "textarea" ? (
+                            <Textarea
+                              value={values[field.key] || ""}
+                              onChange={(e) => setValues(prev => ({ ...prev, [field.key]: e.target.value }))}
+                              placeholder={field.placeholder}
+                              rows={3}
+                              data-testid={`input-config-${field.key}`}
+                            />
+                          ) : (
+                            <Input
+                              value={values[field.key] || ""}
+                              onChange={(e) => setValues(prev => ({ ...prev, [field.key]: e.target.value }))}
+                              placeholder={field.placeholder}
+                              data-testid={`input-config-${field.key}`}
+                            />
+                          )}
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => saveConfig.mutate({ key: field.key, value: values[field.key] || "" })}
+                          disabled={saveConfig.isPending}
+                          data-testid={`button-save-${field.key}`}
+                        >
+                          <Save className="h-3 w-3 mr-1" />
+                          Зберегти
+                        </Button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          </div>
         ))}
       </div>
     </div>

@@ -12,6 +12,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
+  SidebarFooter,
 } from "@/components/ui/sidebar";
 
 interface Stats {
@@ -39,12 +40,18 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className="p-4">
-        <div className="flex items-center gap-2">
-          <div className="flex items-center justify-center h-8 w-8 rounded-md bg-primary text-primary-foreground">
-            <Bot className="h-4 w-4" />
+        <div className="flex items-center gap-3">
+          <div className="flex items-center justify-center rounded-lg bg-primary text-primary-foreground p-2">
+            <Bot className="h-6 w-6" />
           </div>
-          <div>
-            <p className="text-sm font-semibold" data-testid="text-sidebar-title">TG Bot Admin</p>
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-2">
+              <p className="text-base font-bold tracking-tight" data-testid="text-sidebar-title">TG Bot Admin</p>
+              <span className="relative flex h-2.5 w-2.5" data-testid="status-bot-online">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500"></span>
+              </span>
+            </div>
             <p className="text-xs text-muted-foreground">Панель управління</p>
           </div>
         </div>
@@ -83,6 +90,9 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter className="p-4">
+        <p className="text-xs text-muted-foreground text-center" data-testid="text-sidebar-version">v1.0</p>
+      </SidebarFooter>
     </Sidebar>
   );
 }

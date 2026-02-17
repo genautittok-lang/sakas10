@@ -7,13 +7,20 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { Payment } from "@shared/schema";
-import { CheckCircle, XCircle, Clock, Loader2 } from "lucide-react";
+import { CheckCircle, XCircle, Clock, Loader2, CreditCard, DollarSign, AlertCircle } from "lucide-react";
 
 const STATUS_CONFIG: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: any }> = {
   pending: { label: "Очікує", variant: "outline", icon: Clock },
   paid: { label: "Оплачено", variant: "default", icon: CheckCircle },
   cancelled: { label: "Скасовано", variant: "destructive", icon: XCircle },
   processing: { label: "В обробці", variant: "secondary", icon: Loader2 },
+};
+
+const STATUS_DOT_COLOR: Record<string, string> = {
+  pending: "bg-yellow-500",
+  paid: "bg-emerald-500",
+  cancelled: "bg-red-500",
+  processing: "bg-blue-500",
 };
 
 export default function PaymentsPage() {
@@ -36,9 +43,44 @@ export default function PaymentsPage() {
     },
   });
 
+  const totalPayments = payments?.length ?? 0;
+  const totalPaid = payments?.filter(p => p.status === "paid").reduce((sum, p) => sum + (Number(p.amount) || 0), 0) ?? 0;
+  const pendingCount = payments?.filter(p => p.status === "pending").length ?? 0;
+
   return (
     <div className="p-6 space-y-6">
       <h1 className="text-2xl font-semibold" data-testid="text-payments-title">Оплати</h1>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Всього оплат</CardTitle>
+            <CreditCard className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold" data-testid="text-total-payments">{totalPayments}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Оплачено</CardTitle>
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold" data-testid="text-total-paid">{totalPaid} ₴</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Очікують</CardTitle>
+            <AlertCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold" data-testid="text-pending-payments">{pendingCount}</div>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Всі оплати</CardTitle>
@@ -47,13 +89,16 @@ export default function PaymentsPage() {
           {isLoading ? (
             <div className="space-y-2">
               {[1, 2, 3].map(i => (
-                <div key={i} className="h-12 bg-muted rounded animate-pulse" />
+                <div key={i} className="h-12 bg-muted rounded-md animate-pulse" />
               ))}
             </div>
           ) : !payments?.length ? (
-            <p className="text-sm text-muted-foreground py-8 text-center" data-testid="text-no-payments">
-              Поки що немає оплат.
-            </p>
+            <div className="flex flex-col items-center gap-3 py-12" data-testid="text-no-payments">
+              <CreditCard className="h-10 w-10 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">
+                Поки що немає оплат.
+              </p>
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
@@ -70,15 +115,18 @@ export default function PaymentsPage() {
                 <TableBody>
                   {payments.map((payment) => {
                     const config = STATUS_CONFIG[payment.status] || STATUS_CONFIG.pending;
-                    const Icon = config.icon;
+                    const dotColor = STATUS_DOT_COLOR[payment.status] || STATUS_DOT_COLOR.pending;
                     return (
                       <TableRow key={payment.id} data-testid={`row-payment-${payment.id}`}>
                         <TableCell className="font-mono text-sm">{payment.tgId}</TableCell>
                         <TableCell className="font-mono text-sm">{payment.playerId}</TableCell>
                         <TableCell className="font-semibold">{payment.amount} ₴</TableCell>
                         <TableCell>
-                          <Badge variant={config.variant} className="gap-1">
-                            <Icon className="h-3 w-3" />
+                          <Badge
+                            variant={config.variant}
+                            className="gap-1.5 no-default-hover-elevate no-default-active-elevate"
+                          >
+                            <span className={`inline-block h-2 w-2 rounded-full ${dotColor}`} />
                             {config.label}
                           </Badge>
                         </TableCell>

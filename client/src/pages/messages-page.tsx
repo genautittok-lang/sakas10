@@ -6,7 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import type { ManagerMessage } from "@shared/schema";
-import { Check } from "lucide-react";
+import { Check, MessageSquare, Clock, CheckCircle } from "lucide-react";
 
 export default function MessagesPage() {
   const { data: messages, isLoading } = useQuery<ManagerMessage[]>({
@@ -25,9 +25,44 @@ export default function MessagesPage() {
     },
   });
 
+  const totalMessages = messages?.length ?? 0;
+  const pendingCount = messages?.filter(m => !m.resolved).length ?? 0;
+  const resolvedCount = messages?.filter(m => m.resolved).length ?? 0;
+
   return (
     <div className="p-6 space-y-6">
       <h1 className="text-2xl font-semibold" data-testid="text-messages-title">Повідомлення менеджеру</h1>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Всього повідомлень</CardTitle>
+            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold" data-testid="text-total-messages">{totalMessages}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Очікують</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold" data-testid="text-pending-messages">{pendingCount}</div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">Вирішено</CardTitle>
+            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold" data-testid="text-resolved-messages">{resolvedCount}</div>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle className="text-lg">Запити від користувачів</CardTitle>
@@ -36,13 +71,16 @@ export default function MessagesPage() {
           {isLoading ? (
             <div className="space-y-2">
               {[1, 2, 3].map(i => (
-                <div key={i} className="h-12 bg-muted rounded animate-pulse" />
+                <div key={i} className="h-12 bg-muted rounded-md animate-pulse" />
               ))}
             </div>
           ) : !messages?.length ? (
-            <p className="text-sm text-muted-foreground py-8 text-center" data-testid="text-no-messages">
-              Поки що немає повідомлень.
-            </p>
+            <div className="flex flex-col items-center gap-3 py-12" data-testid="text-no-messages">
+              <MessageSquare className="h-10 w-10 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">
+                Поки що немає повідомлень.
+              </p>
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
@@ -65,20 +103,30 @@ export default function MessagesPage() {
                         {msg.username ? (
                           <span className="text-sm">@{msg.username}</span>
                         ) : (
-                          <span className="text-sm text-muted-foreground">--</span>
+                          <span className="text-sm text-muted-foreground">—</span>
                         )}
                       </TableCell>
-                      <TableCell className="text-sm">{msg.userStep || "--"}</TableCell>
-                      <TableCell className="text-sm max-w-[200px] truncate">{msg.reason || "--"}</TableCell>
+                      <TableCell className="text-sm">{msg.userStep || "—"}</TableCell>
+                      <TableCell className="max-w-[300px]">
+                        <p className="text-sm font-medium whitespace-pre-wrap break-words">
+                          {msg.reason || "—"}
+                        </p>
+                      </TableCell>
                       <TableCell>
                         {msg.resolved ? (
-                          <Badge variant="default">Вирішено</Badge>
+                          <Badge variant="default" className="gap-1.5 no-default-hover-elevate no-default-active-elevate">
+                            <span className="inline-block h-2 w-2 rounded-full bg-emerald-500" />
+                            Вирішено
+                          </Badge>
                         ) : (
-                          <Badge variant="destructive">Очікує</Badge>
+                          <Badge variant="destructive" className="gap-1.5 no-default-hover-elevate no-default-active-elevate">
+                            <span className="inline-block h-2 w-2 rounded-full bg-red-400" />
+                            Очікує
+                          </Badge>
                         )}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {msg.createdAt ? new Date(msg.createdAt).toLocaleDateString("uk-UA") : "--"}
+                        {msg.createdAt ? new Date(msg.createdAt).toLocaleDateString("uk-UA") : "—"}
                       </TableCell>
                       <TableCell>
                         {!msg.resolved && (
