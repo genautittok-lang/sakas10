@@ -109,7 +109,7 @@ async function ensureUser(tgId: string, username?: string): Promise<any> {
   return user;
 }
 
-function resolveMediaSource(mediaPath: string): string {
+function resolveMediaSource(mediaPath: string): string | Buffer {
   if (mediaPath.startsWith("/uploads/")) {
     const filePath = path.join(process.cwd(), mediaPath);
     if (fs.existsSync(filePath)) {
@@ -121,6 +121,26 @@ function resolveMediaSource(mediaPath: string): string {
     return `${getServerBaseUrl()}${mediaPath}`;
   }
   return mediaPath;
+}
+
+function getFileOptions(mediaPath: string): Record<string, any> {
+  if (mediaPath.startsWith("/uploads/") || mediaPath.startsWith("/")) {
+    const ext = path.extname(mediaPath).toLowerCase();
+    const mimeTypes: Record<string, string> = {
+      ".mp4": "video/mp4",
+      ".mov": "video/mp4",
+      ".avi": "video/x-msvideo",
+      ".webm": "video/webm",
+      ".jpg": "image/jpeg",
+      ".jpeg": "image/jpeg",
+      ".png": "image/png",
+      ".gif": "image/gif",
+      ".webp": "image/webp",
+    };
+    const contentType = mimeTypes[ext] || "application/octet-stream";
+    return { contentType };
+  }
+  return {};
 }
 
 const PERSISTENT_MANAGER_KEYBOARD = {
@@ -159,10 +179,11 @@ async function showHome(chatId: number, tgId: string) {
   if (welcomeImage) {
     try {
       const source = resolveMediaSource(welcomeImage);
+      const fileOpts = getFileOptions(welcomeImage);
       await bot!.sendPhoto(chatId, source, {
         caption: "\u0417\u0430\u0432\u0430\u043D\u0442\u0430\u0436\u0442\u0435 \u0434\u043E\u0434\u0430\u0442\u043E\u043A \u0434\u043B\u044F \u0432\u0430\u0448\u043E\u0457 \u043F\u043B\u0430\u0442\u0444\u043E\u0440\u043C\u0438:",
         ...buttons,
-      });
+      }, { ...fileOpts });
     } catch (e) {
       log(`Failed to send welcome image: ${e}`, "bot");
       await bot!.sendMessage(chatId, "\u041E\u0431\u0435\u0440\u0456\u0442\u044C \u0432\u0430\u0448\u0443 \u043F\u043B\u0430\u0442\u0444\u043E\u0440\u043C\u0443:", buttons);
@@ -197,10 +218,11 @@ async function showPlatformVideo(chatId: number, platform: "android" | "ios" | "
   if (videoUrl) {
     try {
       const source = resolveMediaSource(videoUrl);
+      const fileOpts = getFileOptions(videoUrl);
       await bot!.sendVideo(chatId, source, {
         caption: "\u{1F4F1} \u0406\u043D\u0441\u0442\u0440\u0443\u043A\u0446\u0456\u044F \u0437 \u0432\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D\u043D\u044F",
         ...buttons,
-      });
+      }, { ...fileOpts });
     } catch (e) {
       log(`Failed to send ${platform} video: ${e}`, "bot");
       await bot!.sendMessage(chatId, "\u{1F4F1} \u0406\u043D\u0441\u0442\u0440\u0443\u043A\u0446\u0456\u044F \u0437 \u0432\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D\u043D\u044F", buttons);
@@ -221,7 +243,8 @@ async function showStep2(chatId: number) {
   if (videoUrl) {
     try {
       const source = resolveMediaSource(videoUrl);
-      await bot!.sendVideo(chatId, source, { caption: text });
+      const fileOpts = getFileOptions(videoUrl);
+      await bot!.sendVideo(chatId, source, { caption: text }, { ...fileOpts });
     } catch (e) {
       log(`Failed to send step2 video: ${e}`, "bot");
       await bot!.sendMessage(chatId, text);
