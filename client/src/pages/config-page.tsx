@@ -20,7 +20,7 @@ interface ConfigField {
 }
 
 const CONFIG_FIELDS: ConfigField[] = [
-  { key: "manager_chat_id", label: "Chat ID менеджера", description: "Telegram Chat ID менеджера для отримання сповіщень", type: "text", placeholder: "123456789" },
+  { key: "manager_chat_id", label: "Chat ID менеджера", description: "Числовий Chat ID (не юзернейм!). Надішліть /start боту @userinfobot щоб дізнатися свій ID", type: "text", placeholder: "123456789" },
   { key: "club_id", label: "Club ID", description: "ID клубу для відображення на кроці 2", type: "text", placeholder: "CLUB123" },
   { key: "welcome_text", label: "Текст привітання", description: "Повідомлення на головному екрані", type: "textarea", placeholder: "Вітаємо! Оберіть дію:" },
   { key: "welcome_image", label: "Зображення привітання", description: "Зображення для головного екрану (URL або завантажити файл)", type: "video", placeholder: "https://example.com/welcome.jpg" },

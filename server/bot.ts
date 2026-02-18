@@ -114,12 +114,14 @@ async function ensureUser(tgId: string, username?: string): Promise<any> {
   return user;
 }
 
-function resolveMediaSource(mediaPath: string): string | Buffer {
+function resolveMediaSource(mediaPath: string): string | fs.ReadStream {
   if (mediaPath.startsWith("/uploads/")) {
     const filePath = path.join(process.cwd(), mediaPath);
     if (fs.existsSync(filePath)) {
-      return filePath;
+      log(`Sending media from disk: ${filePath}`, "bot");
+      return fs.createReadStream(filePath);
     }
+    log(`File not found on disk: ${filePath}, falling back to URL`, "bot");
     return `${getServerBaseUrl()}${mediaPath}`;
   }
   if (mediaPath.startsWith("/")) {
@@ -129,21 +131,23 @@ function resolveMediaSource(mediaPath: string): string | Buffer {
 }
 
 function getFileOptions(mediaPath: string): Record<string, any> {
+  const ext = path.extname(mediaPath).toLowerCase();
+  const mimeTypes: Record<string, string> = {
+    ".mp4": "video/mp4",
+    ".mov": "video/mp4",
+    ".avi": "video/x-msvideo",
+    ".webm": "video/webm",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".png": "image/png",
+    ".gif": "image/gif",
+    ".webp": "image/webp",
+  };
   if (mediaPath.startsWith("/uploads/") || mediaPath.startsWith("/")) {
-    const ext = path.extname(mediaPath).toLowerCase();
-    const mimeTypes: Record<string, string> = {
-      ".mp4": "video/mp4",
-      ".mov": "video/mp4",
-      ".avi": "video/x-msvideo",
-      ".webm": "video/webm",
-      ".jpg": "image/jpeg",
-      ".jpeg": "image/jpeg",
-      ".png": "image/png",
-      ".gif": "image/gif",
-      ".webp": "image/webp",
-    };
+    const filePath = path.join(process.cwd(), mediaPath);
+    const filename = path.basename(mediaPath);
     const contentType = mimeTypes[ext] || "application/octet-stream";
-    return { contentType };
+    return { contentType, filename };
   }
   return {};
 }
@@ -313,47 +317,49 @@ async function createConvert2payPayment(amount: number, playerId: string, paymen
   const secretKey = await getConfigValue("convert2pay_secret_key", "");
   const currency = await getConfigValue("convert2pay_currency", "UAH");
 
-  if (!apiUrl || !merchantId || !secretKey) {
+  if (!apiUrl) {
     return null;
   }
 
-  try {
-    log(`Convert2pay request to: ${apiUrl}`, "bot");
-    const response = await fetch(apiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${secretKey}`,
-      },
-      body: JSON.stringify({
-        merchant_id: merchantId,
-        amount,
-        currency,
-        order_id: paymentId,
-        description: `Payment ${playerId}`,
-        player_id: playerId,
-      }),
-    });
-
-    const responseText = await response.text();
-    log(`Convert2pay response (${response.status}): ${responseText.substring(0, 500)}`, "bot");
-
-    if (!response.ok) {
-      log(`Convert2pay API error: ${response.status}`, "bot");
-      return null;
-    }
-
+  if (merchantId && secretKey) {
     try {
-      const data = JSON.parse(responseText);
-      return data.payment_url || data.url || data.redirect_url || data.link || null;
-    } catch {
-      log(`Convert2pay returned non-JSON response`, "bot");
-      return null;
+      log(`Convert2pay API request to: ${apiUrl}`, "bot");
+      const response = await fetch(apiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${secretKey}`,
+        },
+        body: JSON.stringify({
+          merchant_id: merchantId,
+          amount,
+          currency,
+          order_id: paymentId,
+          description: `Payment ${playerId}`,
+          player_id: playerId,
+        }),
+      });
+
+      const responseText = await response.text();
+      log(`Convert2pay response (${response.status}): ${responseText.substring(0, 500)}`, "bot");
+
+      try {
+        const data = JSON.parse(responseText);
+        if (response.ok) {
+          const link = data.payment_url || data.url || data.redirect_url || data.link || null;
+          if (link) return link;
+        }
+        log(`Convert2pay API error or no link in response`, "bot");
+      } catch {
+        log(`Convert2pay returned HTML - not a REST API, using URL as direct payment link`, "bot");
+      }
+    } catch (err) {
+      log(`Convert2pay API request failed: ${err}`, "bot");
     }
-  } catch (err) {
-    log(`Convert2pay request failed: ${err}`, "bot");
-    return null;
   }
+
+  log(`Using Convert2pay URL directly as payment link: ${apiUrl}`, "bot");
+  return apiUrl;
 }
 
 async function showPaymentStep3(chatId: number, amount: number, playerId: string, paymentId: string, tgId: string, username: string | null) {

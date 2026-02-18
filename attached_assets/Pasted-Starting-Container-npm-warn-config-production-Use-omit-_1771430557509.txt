@@ -1,0 +1,36 @@
+Starting Container
+npm warn config production Use `--omit=dev` instead.
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.cjs
+Initializing database tables...
+Database tables initialized successfully.
+Demo data cleanup completed.
+4:00:02 PM [bot] Telegram bot started
+4:00:02 PM [express] serving on port 8080
+4:00:04 PM [express] GET /api/stats 200 in 71ms :: {"totalUsers":5,"stepCounts":{"HOME":2,"STEP_1":0,"STEP_2":1,"STEP_3":0,"PAYMENT":2},"bonusClaimed":1,"totalPayments":4,"paidCount":0,"totalRevenue":0,"pendingMessages":9,"pendingPayments":4}
+error: [polling_error] {"code":"ETELEGRAM","message":"ETELEGRAM: 409 Conflict: terminated by other getUpdates request; make sure that only one bot instance is running"}
+error: [polling_error] {"code":"ETELEGRAM","message":"ETELEGRAM: 409 Conflict: terminated by other getUpdates request; make sure that only one bot instance is running"}
+error: [polling_error] {"code":"ETELEGRAM","message":"ETELEGRAM: 409 Conflict: terminated by other getUpdates request; make sure that only one bot instance is running"}
+error: [polling_error] {"code":"ETELEGRAM","message":"ETELEGRAM: 409 Conflict: terminated by other getUpdates request; make sure that only one bot instance is running"}
+error: [polling_error] {"code":"ETELEGRAM","message":"ETELEGRAM: 409 Conflict: terminated by other getUpdates request; make sure that only one bot instance is running"}
+4:01:03 PM [express] GET /api/stats 304 in 203ms :: {"totalUsers":5,"stepCounts":{"HOME":2,"STEP_1":0,"STEP_2":1,"STEP_3":0,"PAYMENT":2},"bonusClaimed":1,"totalPayments":4,"paidCount":0,"totalRevenue":0,"pendingMessages":9,"pendingPayments":4}
+4:01:05 PM [express] GET /api/config 304 in 5ms :: [{"id":"6f399550-4109-4660-b84f-bb03341ef2bf","key":"step1_text","value":"Крок 1: Встановіть додаток\n\nОберіть вашу платформу та встановіть додаток:"},{"id":"b4a8ef57-6cdf-41e0-857c-a7b90f85ebe1","key":"step2_text","value":"Крок 2: Вступ до клубу\n\nЗнайдіть клуб за ID та приєднайтесь."},{"id":"2cff9f10-ff8d-4f8e-a624-51bd0a880738","key":"bonus_text","value":"Крок 3: Бонус\n\nВітаємо! Ви можете отримати бонус за реєстрацію."},{"id":"a5d7a3de-39d1-445c-b644-bb816310880c","key":"windows_link","value":"https://www.clubgg.com/"},{"id":"afb7a268-0c7c-45af-bc11-538125600252","key":"club_id","value":"397537"},{"id":"123d624b-1aad-45d3-8ed2-e80d65e4ed80","key":"manager_chat_id","value":"@w_dealz_Ed"},{"id":"1901ed3d-6471-4cdb-8510-133b66971c0a","key":"android_link","value":"https://file.clubgg.com/apk/ClubGG_25_04_0229.apk"},{"id":"f3d76864-19b2-427f-ba0f-53d14c8cd2ff","key":"welcome_text","value":"👋 Вітаємо в приватному клубі W Dealz !\n\n🔥 Чому українці обрали саме нас:\n✅ Швидка реєстрація без верифікації\n✅ Рейкбек всім гравцям\n✅ Джекпот \n\n🏆 ЛІДЕРБОРДИ \n\n💰 ₴ 50 000 ТУРНІРНИЙ ФОНД ЩОМІСЯЦЯ\n2-5+ турнірів на день\n\n💎 ПОДВОЮЙ ПЕРШИЙ ДЕПОЗИТ!\nМиттєве поповнення від ₴ 500, вивід два рази на добу\n"},{"id":"499eb022-ed54-4f3d-8551-360188172ccf","key":"ios_link","value":"https://clubgg.app.link/PffzYsjVO0b"},{"id":"4d486751-6dfb-4df6-a97b-ae7bf2d7c50e","key":"step1_video","value":"/uploads/1771374996195_02ba9f71.mov"},{"id":"d3bb2ce2-8cf0-4798-8074-304d9b2f6ff3","key":"step2_video","value":"/uploads/1771375009532_5874fa1c.mov"},{"id":"233fc1d6-1340-488b-bc0a-69cbc726a20f","key":"welcome_image","value":"/uploads/1771429207601_ae04fac7.jpg"},{"id":"38dca1be-a353-4ceb-9ec7-1b28089b3183","key":"android_video","value":"/uploads/1771429228141_439e37da.mov"},{"id":"62bb8cb7-0fbc-4026-9c9a-854bceecf64d","key":"convert2pay_secret_key","value":"M5SxIOxPip3kKBE0wgQ76DU2OfI9aUaSbGL1RBQi.eA0DipIFIMmQM3evnLCxwcmS8k3rtAvgNz4vV4Cm.O3WxiXVTDvRXwyuKagFMjTP6RsSU8HAR7vGi3yTg"},{"id":"94204cb7-a64d-4743-8c9c-7fcab8a21b3d","key":"convert2pay_merchant_id","value":"GCPM77w6x98TFbtu88Eq"},{"id":"d4296736-65f3-402e-9dd1-c9ab6603b6a7","key":"convert2pay_api_url","value":"https://cabinet.konvert2pay.me/Landing/GCPM77w6x98TFbtu88Eq"},{"id":"5ef0b664-ec80-4bcd-9a7b-9b056889aa06","key":"payment_amounts","value":"100, 200, 500, 1000, 2000, 5000"}]
+4:01:22 PM [bot] Failed to send android video: Error: ETELEGRAM: 400 Bad Request: failed to get HTTP URL content
+4:01:24 PM [bot] Failed to send step2 video: Error: ETELEGRAM: 400 Bad Request: wrong type of the web page content
+4:01:18 PM [express] GET /api/stats 304 in 197ms :: {"totalUsers":5,"stepCounts":{"HOME":2,"STEP_1":0,"STEP_2":1,"STEP_3":0,"PAYMENT":2},"bonusClaimed":1,"totalPayments":4,"paidCount":0,"totalRevenue":0,"pendingMessages":9,"pendingPayments":4}
+4:01:20 PM [bot] Failed to send welcome image: Error: ETELEGRAM: 400 Bad Request: wrong type of the web page content
+4:01:32 PM [bot] Convert2pay request to: https://cabinet.konvert2pay.me/Landing/GCPM77w6x98TFbtu88Eq
+4:01:32 PM [bot] Convert2pay response (200): 
+
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head><title>
+	Тестовый лендинг
+</title></head>
+<body>
+    <form method="post" action="./GCPM77w6x98TFbtu88Eq" id="form1">
+<input type="hidden" name="__VIEWSTATE" id="__VIEWSTATE" value="ny7OTHEI/lfUWrfDls0E5tXBFjNmNf2veh/AyVVVjpja1eUyrq8l1SVTJfa4o5VIzUsODJw+9m/FG6r+25ajKU8Pix+nGhtdA9TO5i51S8Ng7RpxAZ4U1Hwj3HWuV0R7uGvykBmtsLxn1wv7YAjZsk0s/T+7kXG7UjgncnZgPyzCSAscnqpM1uMcHzxOE1wGiVEY9A/bzAXE2jHVhp/8/bF3kdLeHin5FJ1hSyGnpAXbJPA7
+4:01:32 PM [bot] Convert2pay returned non-JSON response
+4:01:32 PM [bot] Manager chat ID "@w_dealz_Ed" not found. Make sure to use a numeric Chat ID (not username). You can get it by messaging @userinfobot on Telegram.
+4:01:33 PM [express] GET /api/stats 200 in 26ms :: {"totalUsers":5,"stepCounts":{"HOME":2,"STEP_1":0,"STEP_2":1,"STEP_3":0,"PAYMENT":2},"bonusClaimed":1,"totalPayments":5,"paidCount":0,"totalRevenue":0,"pendingMessages":10,"pendingPayments":5}
