@@ -321,53 +321,84 @@ async function createConvert2payPayment(amount: number, playerId: string, paymen
     return null;
   }
 
-  if (merchantId && secretKey) {
-    try {
-      log(`Convert2pay API request to: ${apiUrl}`, "bot");
-      const response = await fetch(apiUrl, {
+  try {
+    log(`Convert2pay: fetching landing page: ${apiUrl}`, "bot");
+    const getResponse = await fetch(apiUrl);
+    const html = await getResponse.text();
+
+    const viewStateMatch = html.match(/name="__VIEWSTATE"[^>]*value="([^"]*)"/);
+    const viewStateGenMatch = html.match(/name="__VIEWSTATEGENERATOR"[^>]*value="([^"]*)"/);
+    const eventValMatch = html.match(/name="__EVENTVALIDATION"[^>]*value="([^"]*)"/);
+
+    if (viewStateMatch) {
+      log(`Convert2pay: submitting form with amount=${amount}, client_id=${playerId}`, "bot");
+      const formData = new URLSearchParams();
+      formData.append("__VIEWSTATE", viewStateMatch[1]);
+      if (viewStateGenMatch) formData.append("__VIEWSTATEGENERATOR", viewStateGenMatch[1]);
+      if (eventValMatch) formData.append("__EVENTVALIDATION", eventValMatch[1]);
+      formData.append("order_id", paymentId);
+      formData.append("client_id", playerId);
+      formData.append("amount", String(amount));
+      formData.append("currency", currency);
+
+      const postResponse = await fetch(apiUrl, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${secretKey}`,
-        },
-        body: JSON.stringify({
-          merchant_id: merchantId,
-          amount,
-          currency,
-          order_id: paymentId,
-          description: `Payment ${playerId}`,
-          player_id: playerId,
-        }),
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: formData.toString(),
+        redirect: "manual",
       });
 
-      const responseText = await response.text();
-      log(`Convert2pay response (${response.status}): ${responseText.substring(0, 500)}`, "bot");
+      const location = postResponse.headers.get("location");
+      if (location) {
+        log(`Convert2pay: got redirect URL: ${location}`, "bot");
+        return location;
+      }
 
-      try {
-        const data = JSON.parse(responseText);
-        if (response.ok) {
+      const postHtml = await postResponse.text();
+      log(`Convert2pay POST response (${postResponse.status}): ${postHtml.substring(0, 800)}`, "bot");
+
+      const linkMatch = postHtml.match(/href="(https?:\/\/[^"]*pay[^"]*)"/i) 
+        || postHtml.match(/window\.location\s*=\s*["'](https?:\/\/[^"']*)/i)
+        || postHtml.match(/action="(https?:\/\/[^"]*)"/i);
+      if (linkMatch) {
+        log(`Convert2pay: extracted payment URL from response: ${linkMatch[1]}`, "bot");
+        return linkMatch[1];
+      }
+
+      log(`Convert2pay: no redirect or payment URL found in POST response`, "bot");
+    } else {
+      log(`Convert2pay: page is not ASP.NET form, trying JSON API`, "bot");
+      if (merchantId && secretKey) {
+        const response = await fetch(apiUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${secretKey}`,
+          },
+          body: JSON.stringify({
+            merchant_id: merchantId,
+            amount,
+            currency,
+            order_id: paymentId,
+            description: `Payment ${playerId}`,
+            player_id: playerId,
+          }),
+        });
+        const responseText = await response.text();
+        log(`Convert2pay API response (${response.status}): ${responseText.substring(0, 500)}`, "bot");
+        try {
+          const data = JSON.parse(responseText);
           const link = data.payment_url || data.url || data.redirect_url || data.link || null;
           if (link) return link;
-        }
-        log(`Convert2pay API error or no link in response`, "bot");
-      } catch {
-        log(`Convert2pay returned HTML - not a REST API, using URL as direct payment link`, "bot");
+        } catch {}
       }
-    } catch (err) {
-      log(`Convert2pay API request failed: ${err}`, "bot");
     }
+  } catch (err) {
+    log(`Convert2pay request failed: ${err}`, "bot");
   }
 
-  const params = new URLSearchParams({
-    amount: String(amount),
-    currency,
-    order_id: paymentId,
-    client_id: playerId,
-  });
-  const separator = apiUrl.includes("?") ? "&" : "?";
-  const fullUrl = `${apiUrl}${separator}${params.toString()}`;
-  log(`Using Convert2pay URL directly as payment link: ${fullUrl}`, "bot");
-  return fullUrl;
+  log(`Convert2pay: fallback - using URL directly: ${apiUrl}`, "bot");
+  return apiUrl;
 }
 
 async function showPaymentStep3(chatId: number, amount: number, playerId: string, paymentId: string, tgId: string, username: string | null) {
