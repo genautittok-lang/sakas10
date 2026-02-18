@@ -358,8 +358,16 @@ async function createConvert2payPayment(amount: number, playerId: string, paymen
     }
   }
 
-  log(`Using Convert2pay URL directly as payment link: ${apiUrl}`, "bot");
-  return apiUrl;
+  const params = new URLSearchParams({
+    amount: String(amount),
+    currency,
+    order_id: paymentId,
+    client_id: playerId,
+  });
+  const separator = apiUrl.includes("?") ? "&" : "?";
+  const fullUrl = `${apiUrl}${separator}${params.toString()}`;
+  log(`Using Convert2pay URL directly as payment link: ${fullUrl}`, "bot");
+  return fullUrl;
 }
 
 async function showPaymentStep3(chatId: number, amount: number, playerId: string, paymentId: string, tgId: string, username: string | null) {
