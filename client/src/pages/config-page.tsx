@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Save, Settings, Upload, Link as LinkIcon, MessageSquare, Film, Smartphone, CreditCard, Cog, ChevronDown, CheckCircle } from "lucide-react";
+import { Save, Settings, Upload, Link as LinkIcon, MessageSquare, Film, Smartphone, CreditCard, Cog, ChevronDown, CheckCircle, X } from "lucide-react";
 import type { BotConfig } from "@shared/schema";
 
 interface ConfigField {
@@ -85,10 +85,13 @@ function VideoUploadField({
   onChange: (val: string) => void;
   placeholder: string;
 }) {
-  const [mode, setMode] = useState<"url" | "upload">("url");
   const [uploading, setUploading] = useState(false);
+  const [showUrlInput, setShowUrlInput] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  const isImage = value && /\.(jpg|jpeg|png|gif|webp)$/i.test(value);
+  const isVideo = value && /\.(mp4|mov|avi|webm)$/i.test(value);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -123,59 +126,79 @@ function VideoUploadField({
 
   return (
     <div className="space-y-2">
-      <div className="flex gap-1">
-        <Button
-          variant={mode === "url" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setMode("url")}
-          data-testid={`button-mode-url-${fieldKey}`}
-        >
-          <LinkIcon className="h-3 w-3 mr-1" />
-          URL
-        </Button>
-        <Button
-          variant={mode === "upload" ? "default" : "outline"}
-          size="sm"
-          onClick={() => setMode("upload")}
-          data-testid={`button-mode-upload-${fieldKey}`}
-        >
-          <Upload className="h-3 w-3 mr-1" />
-          Завантажити
-        </Button>
-      </div>
-      {mode === "url" ? (
-        <Input
-          value={value}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder={placeholder}
-          data-testid={`input-config-${fieldKey}`}
-        />
-      ) : (
-        <div className="space-y-2">
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="video/mp4,video/quicktime,video/x-msvideo,video/webm,image/*"
-            onChange={handleFileUpload}
-            className="hidden"
-            data-testid={`input-file-${fieldKey}`}
-          />
-          <Button
-            variant="outline"
-            onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
-            className="w-full justify-start"
-            data-testid={`button-upload-${fieldKey}`}
-          >
-            <Upload className="h-4 w-4 mr-2" />
-            {uploading ? "Завантаження..." : "Обрати файл"}
-          </Button>
-          {value && (
-            <p className="text-xs text-muted-foreground truncate" data-testid={`text-uploaded-${fieldKey}`}>
-              Поточне: {value}
+      {value && (
+        <div className="relative rounded-md overflow-hidden border bg-muted">
+          {isImage && (
+            <img
+              src={value}
+              alt="Preview"
+              className="max-h-40 w-auto object-contain mx-auto"
+              data-testid={`preview-image-${fieldKey}`}
+            />
+          )}
+          {isVideo && (
+            <video
+              src={value}
+              controls
+              className="max-h-40 w-full"
+              data-testid={`preview-video-${fieldKey}`}
+            />
+          )}
+          {!isImage && !isVideo && (
+            <p className="p-3 text-sm text-muted-foreground truncate" data-testid={`text-current-${fieldKey}`}>
+              {value}
             </p>
           )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-1 right-1 bg-background/80"
+            onClick={() => onChange("")}
+            data-testid={`button-clear-${fieldKey}`}
+          >
+            <X className="h-4 w-4" />
+          </Button>
         </div>
+      )}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="video/*,image/*"
+        onChange={handleFileUpload}
+        className="hidden"
+        data-testid={`input-file-${fieldKey}`}
+      />
+      <Button
+        variant="outline"
+        onClick={() => fileInputRef.current?.click()}
+        disabled={uploading}
+        className="w-full"
+        data-testid={`button-upload-${fieldKey}`}
+      >
+        <Upload className="h-4 w-4 mr-2" />
+        {uploading ? "Завантаження..." : "Завантажити з галереї"}
+      </Button>
+      {showUrlInput ? (
+        <div className="flex gap-2">
+          <Input
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={placeholder}
+            data-testid={`input-url-${fieldKey}`}
+          />
+          <Button variant="ghost" size="icon" onClick={() => setShowUrlInput(false)}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          className="text-xs text-muted-foreground hover:underline"
+          onClick={() => setShowUrlInput(true)}
+          data-testid={`button-show-url-${fieldKey}`}
+        >
+          або вставити URL
+        </button>
       )}
     </div>
   );

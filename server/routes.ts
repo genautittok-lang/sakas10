@@ -65,7 +65,25 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
 
-  app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
+  app.use("/uploads", express.static(path.join(process.cwd(), "uploads"), {
+    setHeaders: (res, filePath) => {
+      const ext = path.extname(filePath).toLowerCase();
+      const mimeTypes: Record<string, string> = {
+        '.mp4': 'video/mp4',
+        '.mov': 'video/quicktime',
+        '.avi': 'video/x-msvideo',
+        '.webm': 'video/webm',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.png': 'image/png',
+        '.gif': 'image/gif',
+        '.webp': 'image/webp',
+      };
+      if (mimeTypes[ext]) {
+        res.setHeader('Content-Type', mimeTypes[ext]);
+      }
+    },
+  }));
 
   await initDatabase();
   startBot();
