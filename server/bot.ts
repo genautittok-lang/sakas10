@@ -114,11 +114,25 @@ function resolveVideoUrl(videoUrl: string): string {
   return videoUrl;
 }
 
+const PERSISTENT_MANAGER_KEYBOARD = {
+  reply_markup: {
+    keyboard: [[{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7" }]],
+    resize_keyboard: true,
+    is_persistent: true,
+  },
+};
+
 async function showHome(chatId: number, tgId: string) {
   const welcomeText = await getConfigValue("welcome_text",
     "\u{1F44B} \u0412\u0456\u0442\u0430\u0454\u043C\u043E \u0432 \u043F\u0440\u0438\u0432\u0430\u0442\u043D\u043E\u043C\u0443 \u043A\u043B\u0443\u0431\u0456 W Dealz !\n\n\u{1F525} \u0427\u043E\u043C\u0443 \u0443\u043A\u0440\u0430\u0457\u043D\u0446\u0456 \u043E\u0431\u0440\u0430\u043B\u0438 \u0441\u0430\u043C\u0435 \u043D\u0430\u0441:\n\u2705 \u0428\u0432\u0438\u0434\u043A\u0430 \u0440\u0435\u0454\u0441\u0442\u0440\u0430\u0446\u0456\u044F \u0431\u0435\u0437 \u0432\u0435\u0440\u0438\u0444\u0456\u043A\u0430\u0446\u0456\u0457\n\u2705 \u0420\u0435\u0439\u043A\u0431\u0435\u043A \u0432\u0441\u0456\u043C \u0433\u0440\u0430\u0432\u0446\u044F\u043C\n\u2705 \u0414\u0436\u0435\u043A\u043F\u043E\u0442 \n\n\u{1F3C6} \u041B\u0406\u0414\u0415\u0420\u0411\u041E\u0420\u0414\u0418 \n\n\u{1F4B0} \u20B4 50 000 \u0422\u0423\u0420\u041D\u0406\u0420\u041D\u0418\u0419 \u0424\u041E\u041D\u0414 \u0429\u041E\u041C\u0406\u0421\u042F\u0426\u042F\n2-5+ \u0442\u0443\u0440\u043D\u0456\u0440\u0456\u0432 \u043D\u0430 \u0434\u0435\u043D\u044C\n\n\u{1F48E} \u041F\u041E\u0414\u0412\u041E\u042E\u0419 \u041F\u0415\u0420\u0428\u0418\u0419 \u0414\u0415\u041F\u041E\u0417\u0418\u0422!\n\u041C\u0438\u0442\u0442\u0454\u0432\u0435 \u043F\u043E\u043F\u043E\u0432\u043D\u0435\u043D\u043D\u044F \u0432\u0456\u0434 \u20B4 500, \u0432\u0438\u0432\u0456\u0434 \u0434\u0432\u0430 \u0440\u0430\u0437\u0438 \u043D\u0430 \u0434\u043E\u0431\u0443");
 
-  await bot!.sendMessage(chatId, welcomeText);
+  await bot!.sendMessage(chatId, welcomeText, {
+    reply_markup: {
+      keyboard: [[{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7" }]],
+      resize_keyboard: true,
+      is_persistent: true,
+    },
+  });
 
   const welcomeImage = await getConfigValue("welcome_image", "");
   const buttons = {
@@ -166,7 +180,6 @@ async function showPlatformVideo(chatId: number, platform: "android" | "ios" | "
       inline_keyboard: [
         [{ text: `\u{1F4E5} \u0417\u0430\u0432\u0430\u043D\u0442\u0430\u0436\u0438\u0442\u0438 ${platformNames[platform]}`, url: downloadLink }],
         [{ text: "\u2705 \u042F \u0432\u0441\u0442\u0430\u043D\u043E\u0432\u0438\u0432 \u0434\u043E\u0434\u0430\u0442\u043E\u043A", callback_data: "installed_app" }],
-        [{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }],
         [{ text: "\u{1F519} \u041D\u0430\u0437\u0430\u0434", callback_data: "go_home" }],
       ],
     },
@@ -213,7 +226,6 @@ async function showStep2(chatId: number) {
       inline_keyboard: [
         [{ text: "\u2705 \u042F \u0432 \u043A\u043B\u0443\u0431\u0456", callback_data: "joined_club" }],
         [{ text: "\u274C \u041D\u0435 \u0437\u043D\u0430\u0439\u0448\u043E\u0432 \u043A\u043B\u0443\u0431", callback_data: "club_not_found" }],
-        [{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }],
       ],
     },
   });
@@ -221,14 +233,12 @@ async function showStep2(chatId: number) {
 
 async function showStep3(chatId: number) {
   const bonusText = await getConfigValue("bonus_text",
-    "\u{1F381} \u041A\u0440\u043E\u043A 3: \u0411\u043E\u043D\u0443\u0441\n\n\u0412\u0456\u0442\u0430\u0454\u043C\u043E! \u0412\u0438 \u043C\u043E\u0436\u0435\u0442\u0435 \u043E\u0442\u0440\u0438\u043C\u0430\u0442\u0438 \u0431\u043E\u043D\u0443\u0441 \u0437\u0430 \u0440\u0435\u0454\u0441\u0442\u0440\u0430\u0446\u0456\u044E \u0442\u0430 \u0432\u0441\u0442\u0443\u043F \u0434\u043E \u043A\u043B\u0443\u0431\u0443.\n\n\u041D\u0430\u0442\u0438\u0441\u043D\u0456\u0442\u044C \u043A\u043D\u043E\u043F\u043A\u0443 \u043D\u0438\u0436\u0447\u0435 \u0449\u043E\u0431 \u0437\u0430\u0431\u0440\u0430\u0442\u0438 \u0431\u043E\u043D\u0443\u0441.");
+    "\u{1F381} \u0411\u043E\u043D\u0443\u0441\n\n\u{1F48E} \u041F\u041E\u0414\u0412\u041E\u042E\u0419 \u041F\u0415\u0420\u0428\u0418\u0419 \u0414\u0415\u041F\u041E\u0417\u0418\u0422!\n\n\u041F\u043E\u043F\u043E\u0432\u043D\u0456\u0442\u044C \u0440\u0430\u0445\u0443\u043D\u043E\u043A \u0442\u0430 \u043E\u0442\u0440\u0438\u043C\u0430\u0439\u0442\u0435 \u0431\u043E\u043D\u0443\u0441 \u043D\u0430 \u043F\u0435\u0440\u0448\u0438\u0439 \u0434\u0435\u043F\u043E\u0437\u0438\u0442.\n\u041C\u0456\u043D\u0456\u043C\u0430\u043B\u044C\u043D\u0435 \u043F\u043E\u043F\u043E\u0432\u043D\u0435\u043D\u043D\u044F \u0432\u0456\u0434 \u20B4 500.");
 
   await bot!.sendMessage(chatId, bonusText, {
     reply_markup: {
       inline_keyboard: [
-        [{ text: "\u{1F381} \u0417\u0430\u0431\u0440\u0430\u0442\u0438 \u0431\u043E\u043D\u0443\u0441", callback_data: "claim_bonus" }],
-        [{ text: "\u{1F4B3} \u041F\u043E\u043F\u043E\u0432\u043D\u0438\u0442\u0438", callback_data: "go_payment" }],
-        [{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }],
+        [{ text: "\u{1F4B0} \u041F\u043E\u043F\u043E\u0432\u043D\u0438\u0442\u0438 \u0442\u0430 \u043E\u0442\u0440\u0438\u043C\u0430\u0442\u0438 \u0431\u043E\u043D\u0443\u0441", callback_data: "go_payment" }],
         [{ text: "\u{1F4CB} \u041F\u0440\u0430\u0432\u0438\u043B\u0430", callback_data: "rules" }, { text: "\u{1F3E0} \u0413\u043E\u043B\u043E\u0432\u043D\u0430", callback_data: "go_home" }],
       ],
     },
@@ -242,7 +252,6 @@ async function showPaymentStep1(chatId: number) {
     rows.push(amounts.slice(i, i + 3).map(a => ({ text: `${a} \u20B4`, callback_data: `amount_${a}` })));
   }
   rows.push([{ text: "\u270F\uFE0F \u0412\u0432\u0435\u0441\u0442\u0438 \u0432\u0440\u0443\u0447\u043D\u0443", callback_data: "custom_amount" }]);
-  rows.push([{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }]);
   rows.push([{ text: "\u{1F3E0} \u0413\u043E\u043B\u043E\u0432\u043D\u0430", callback_data: "go_home" }]);
 
   await bot!.sendMessage(chatId, "\u{1F4B3} \u041E\u0431\u0435\u0440\u0456\u0442\u044C \u0441\u0443\u043C\u0443 \u043F\u043E\u043F\u043E\u0432\u043D\u0435\u043D\u043D\u044F:", {
@@ -255,7 +264,6 @@ async function showPaymentStep2(chatId: number, amount: number) {
     `\u{1F4B0} \u0421\u0443\u043C\u0430: ${amount} \u20B4\n\n\u{1F4DD} \u0412\u0432\u0435\u0434\u0456\u0442\u044C \u0432\u0430\u0448 Player ID:`, {
     reply_markup: {
       inline_keyboard: [
-        [{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }],
         [{ text: "\u{1F3E0} \u0413\u043E\u043B\u043E\u0432\u043D\u0430", callback_data: "go_home" }],
       ],
     },
@@ -321,7 +329,6 @@ async function showPaymentStep3(chatId: number, amount: number, playerId: string
       reply_markup: {
         inline_keyboard: [
           [{ text: "\u{1F504} \u041F\u0435\u0440\u0435\u0432\u0456\u0440\u0438\u0442\u0438 \u043E\u043F\u043B\u0430\u0442\u0443", callback_data: `check_payment_${paymentId}` }],
-          [{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }],
           [{ text: "\u{1F3E0} \u0413\u043E\u043B\u043E\u0432\u043D\u0430", callback_data: "go_home" }],
         ],
       },
@@ -336,7 +343,6 @@ async function showPaymentStep3(chatId: number, amount: number, playerId: string
       inline_keyboard: [
         [{ text: "\u{1F4B3} \u041E\u043F\u043B\u0430\u0442\u0438\u0442\u0438", url: payLink }],
         [{ text: "\u{1F504} \u041F\u0435\u0440\u0435\u0432\u0456\u0440\u0438\u0442\u0438 \u043E\u043F\u043B\u0430\u0442\u0443", callback_data: `check_payment_${paymentId}` }],
-        [{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }],
         [{ text: "\u{1F3E0} \u0413\u043E\u043B\u043E\u0432\u043D\u0430", callback_data: "go_home" }],
       ],
     },
@@ -693,7 +699,6 @@ export function startBot() {
       await bot!.sendMessage(chatId, "\u270F\uFE0F \u0412\u0432\u0435\u0434\u0456\u0442\u044C \u0441\u0443\u043C\u0443 \u043F\u043E\u043F\u043E\u0432\u043D\u0435\u043D\u043D\u044F (\u0447\u0438\u0441\u043B\u043E):", {
         reply_markup: {
           inline_keyboard: [
-            [{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }],
             [{ text: "\u{1F3E0} \u0413\u043E\u043B\u043E\u0432\u043D\u0430", callback_data: "go_home" }],
           ],
         },
@@ -713,7 +718,6 @@ export function startBot() {
           reply_markup: {
             inline_keyboard: [
               [{ text: "\u{1F4B3} \u041F\u043E\u043F\u043E\u0432\u043D\u0438\u0442\u0438 \u0449\u0435", callback_data: "go_payment" }],
-              [{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }],
               [{ text: "\u{1F3E0} \u0413\u043E\u043B\u043E\u0432\u043D\u0430", callback_data: "go_home" }],
             ],
           },
@@ -723,7 +727,6 @@ export function startBot() {
           reply_markup: {
             inline_keyboard: [
               [{ text: "\u{1F4B3} \u041F\u043E\u043F\u043E\u0432\u043D\u0438\u0442\u0438", callback_data: "go_payment" }],
-              [{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }],
               [{ text: "\u{1F3E0} \u0413\u043E\u043B\u043E\u0432\u043D\u0430", callback_data: "go_home" }],
             ],
           },
@@ -733,7 +736,6 @@ export function startBot() {
           reply_markup: {
             inline_keyboard: [
               [{ text: "\u{1F504} \u041F\u0435\u0440\u0435\u0432\u0456\u0440\u0438\u0442\u0438 \u0449\u0435 \u0440\u0430\u0437", callback_data: `check_payment_${paymentId}` }],
-              [{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }],
             ],
           },
         });
@@ -804,6 +806,19 @@ export function startBot() {
       return;
     }
 
+    if (msg.text === "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7") {
+      await ensureUser(tgId, msg.from?.username);
+      userManagerState.set(tgId, true);
+      await bot!.sendMessage(chatId, "\u{1F4AC} \u041E\u043F\u0438\u0448\u0456\u0442\u044C \u0432\u0430\u0448\u0443 \u043F\u0440\u043E\u0431\u043B\u0435\u043C\u0443, \u0456 \u043C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 \u0432\u0456\u0434\u043F\u043E\u0432\u0456\u0441\u0442\u044C \u0432\u0430\u043C \u043D\u0430\u0439\u0431\u043B\u0438\u0436\u0447\u0438\u043C \u0447\u0430\u0441\u043E\u043C.", {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: "\u274C \u0421\u043A\u0430\u0441\u0443\u0432\u0430\u0442\u0438", callback_data: "cancel_manager_msg" }],
+          ],
+        },
+      });
+      return;
+    }
+
     if (userManagerState.get(tgId) && msg.text) {
       userManagerState.delete(tgId);
       const user = await storage.getBotUser(tgId);
@@ -828,7 +843,6 @@ export function startBot() {
         await bot!.sendMessage(chatId, "\u274C \u0412\u0432\u0435\u0434\u0456\u0442\u044C \u043A\u043E\u0440\u0435\u043A\u0442\u043D\u0443 \u0441\u0443\u043C\u0443 (\u043F\u043E\u0437\u0438\u0442\u0438\u0432\u043D\u0435 \u0447\u0438\u0441\u043B\u043E):", {
           reply_markup: {
             inline_keyboard: [
-              [{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }],
               [{ text: "\u{1F3E0} \u0413\u043E\u043B\u043E\u0432\u043D\u0430", callback_data: "go_home" }],
             ],
           },
@@ -846,7 +860,6 @@ export function startBot() {
         await bot!.sendMessage(chatId, "\u274C \u0412\u0432\u0435\u0434\u0456\u0442\u044C \u043A\u043E\u0440\u0435\u043A\u0442\u043D\u0438\u0439 Player ID:", {
           reply_markup: {
             inline_keyboard: [
-              [{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }],
               [{ text: "\u{1F3E0} \u0413\u043E\u043B\u043E\u0432\u043D\u0430", callback_data: "go_home" }],
             ],
           },
