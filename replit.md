@@ -11,7 +11,10 @@ Payment integration with Convert2pay. File upload support for videos.
 - **Uploads**: Stored in `/uploads/` directory, served via Express static route
 
 ## Bot Flow
-Users go through: HOME -> STEP_1 (install app) -> STEP_2 (join club) -> STEP_3 (bonus) -> PAYMENT
+Users go through: HOME (welcome + platform selection) -> STEP_2 (join club) -> STEP_3 (bonus) -> PAYMENT
+- /start shows welcome text, then image with 3 platform buttons (Android/iOS/Windows)
+- Each platform button sends installation video + download link
+- "Я встановив додаток" button advances to STEP_2
 - Each screen has "Manager 24/7" button (including payment sub-steps)
 - Steps are strictly sequential - user cannot skip steps
 - Payment: choose amount -> enter Player ID -> get payment link -> check status
@@ -34,14 +37,16 @@ Users go through: HOME -> STEP_1 (install app) -> STEP_2 (join club) -> STEP_3 (
 ## Bot Configuration (via Admin Panel -> Settings)
 - `manager_chat_id` - Telegram chat ID of manager
 - `club_id` - Club ID shown in step 2
-- `step1_video`, `step2_video` - Video URLs or uploaded files for steps
+- `welcome_image` - Welcome screen image (URL or uploaded file)
+- `android_video`, `ios_video`, `windows_video` - Platform-specific installation videos
+- `step2_video` - Video for step 2 (club join)
 - `android_link`, `ios_link`, `windows_link` - App download links
 - `payment_amounts` - Comma-separated fixed amounts for payment buttons (default: 100, 200, 500, 1000, 2000, 5000)
 - `convert2pay_api_url` - Convert2pay API endpoint
 - `convert2pay_merchant_id` - Merchant ID
 - `convert2pay_secret_key` - Secret key (also used for webhook verification)
 - `convert2pay_currency` - Currency code (default UAH)
-- Various text fields for bot messages (welcome_text, step1_text, step2_text, bonus_text, rules_text)
+- Various text fields for bot messages (welcome_text, step2_text, bonus_text, rules_text)
 
 ## API Endpoints
 - GET /api/stats - Dashboard statistics
@@ -82,7 +87,14 @@ Manager (set via `manager_chat_id` in Settings) has admin commands in Telegram:
 - Broadcast messages to all users
 - Reply to user messages from Telegram notifications
 
-## Recent Changes (2026-02-17)
+## Recent Changes (2026-02-18)
+- Merged HOME + STEP_1 into unified welcome screen with platform-specific videos
+- /start now shows welcome text, then image with 3 platform buttons (Android/iOS/Windows)
+- Each platform button sends installation video + download link
+- Admin panel config updated: welcome_image, android_video, ios_video, windows_video fields
+- Removed step1_text/step1_video (replaced by platform-specific media)
+
+## Previous Changes (2026-02-17)
 - Added Telegram admin panel for manager (/admin, /stats, payment confirmation, broadcast)
 - Fixed Step 1 flow: video shown first, then download links as separate message
 - Added messageReplies table for two-way messaging (web panel + Telegram)

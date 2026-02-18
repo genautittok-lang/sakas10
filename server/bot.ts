@@ -116,53 +116,79 @@ function resolveVideoUrl(videoUrl: string): string {
 
 async function showHome(chatId: number, tgId: string) {
   const welcomeText = await getConfigValue("welcome_text",
-    "\u{1F44B} \u0412\u0456\u0442\u0430\u0454\u043C\u043E! \u041E\u0431\u0435\u0440\u0456\u0442\u044C \u0434\u0456\u044E:");
+    "\u{1F44B} \u0412\u0456\u0442\u0430\u0454\u043C\u043E \u0432 \u043F\u0440\u0438\u0432\u0430\u0442\u043D\u043E\u043C\u0443 \u043A\u043B\u0443\u0431\u0456 W Dealz !\n\n\u{1F525} \u0427\u043E\u043C\u0443 \u0443\u043A\u0440\u0430\u0457\u043D\u0446\u0456 \u043E\u0431\u0440\u0430\u043B\u0438 \u0441\u0430\u043C\u0435 \u043D\u0430\u0441:\n\u2705 \u0428\u0432\u0438\u0434\u043A\u0430 \u0440\u0435\u0454\u0441\u0442\u0440\u0430\u0446\u0456\u044F \u0431\u0435\u0437 \u0432\u0435\u0440\u0438\u0444\u0456\u043A\u0430\u0446\u0456\u0457\n\u2705 \u0420\u0435\u0439\u043A\u0431\u0435\u043A \u0432\u0441\u0456\u043C \u0433\u0440\u0430\u0432\u0446\u044F\u043C\n\u2705 \u0414\u0436\u0435\u043A\u043F\u043E\u0442 \n\n\u{1F3C6} \u041B\u0406\u0414\u0415\u0420\u0411\u041E\u0420\u0414\u0418 \n\n\u{1F4B0} \u20B4 50 000 \u0422\u0423\u0420\u041D\u0406\u0420\u041D\u0418\u0419 \u0424\u041E\u041D\u0414 \u0429\u041E\u041C\u0406\u0421\u042F\u0426\u042F\n2-5+ \u0442\u0443\u0440\u043D\u0456\u0440\u0456\u0432 \u043D\u0430 \u0434\u0435\u043D\u044C\n\n\u{1F48E} \u041F\u041E\u0414\u0412\u041E\u042E\u0419 \u041F\u0415\u0420\u0428\u0418\u0419 \u0414\u0415\u041F\u041E\u0417\u0418\u0422!\n\u041C\u0438\u0442\u0442\u0454\u0432\u0435 \u043F\u043E\u043F\u043E\u0432\u043D\u0435\u043D\u043D\u044F \u0432\u0456\u0434 \u20B4 500, \u0432\u0438\u0432\u0456\u0434 \u0434\u0432\u0430 \u0440\u0430\u0437\u0438 \u043D\u0430 \u0434\u043E\u0431\u0443");
 
-  await bot!.sendMessage(chatId, welcomeText, {
+  await bot!.sendMessage(chatId, welcomeText);
+
+  const welcomeImage = await getConfigValue("welcome_image", "");
+  const buttons = {
     reply_markup: {
       inline_keyboard: [
-        [{ text: "\u25B6\uFE0F \u041F\u043E\u0447\u0430\u0442\u0438", callback_data: "go_step1" }],
+        [
+          { text: "\u{1F916} Android", callback_data: "show_android" },
+          { text: "\u{1F34E} iOS", callback_data: "show_ios" },
+          { text: "\u{1F5A5} Windows", callback_data: "show_windows" },
+        ],
+        [{ text: "\u2705 \u042F \u0432\u0441\u0442\u0430\u043D\u043E\u0432\u0438\u0432 \u0434\u043E\u0434\u0430\u0442\u043E\u043A", callback_data: "installed_app" }],
         [{ text: "\u{1F4B3} \u041F\u043E\u043F\u043E\u0432\u043D\u0438\u0442\u0438", callback_data: "go_payment" }],
         [{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }],
         [{ text: "\u{1F4CB} \u041F\u0440\u0430\u0432\u0438\u043B\u0430", callback_data: "rules" }],
       ],
     },
-  });
+  };
+
+  if (welcomeImage) {
+    try {
+      const resolvedUrl = resolveVideoUrl(welcomeImage);
+      await bot!.sendPhoto(chatId, resolvedUrl, {
+        caption: "\u0417\u0430\u0432\u0430\u043D\u0442\u0430\u0436\u0442\u0435 \u0434\u043E\u0434\u0430\u0442\u043E\u043A \u0434\u043B\u044F \u0432\u0430\u0448\u043E\u0457 \u043F\u043B\u0430\u0442\u0444\u043E\u0440\u043C\u0438:",
+        ...buttons,
+      });
+    } catch (e) {
+      log(`Failed to send welcome image: ${e}`, "bot");
+      await bot!.sendMessage(chatId, "\u041E\u0431\u0435\u0440\u0456\u0442\u044C \u0432\u0430\u0448\u0443 \u043F\u043B\u0430\u0442\u0444\u043E\u0440\u043C\u0443:", buttons);
+    }
+  } else {
+    await bot!.sendMessage(chatId, "\u041E\u0431\u0435\u0440\u0456\u0442\u044C \u0432\u0430\u0448\u0443 \u043F\u043B\u0430\u0442\u0444\u043E\u0440\u043C\u0443:", buttons);
+  }
 }
 
-async function showStep1(chatId: number) {
-  const videoUrl = await getConfigValue("step1_video", "");
-  const androidLink = await getConfigValue("android_link", "https://example.com/android");
-  const iosLink = await getConfigValue("ios_link", "https://example.com/ios");
-  const windowsLink = await getConfigValue("windows_link", "https://example.com/windows");
-  const step1Text = await getConfigValue("step1_text",
-    "\u{1F4F1} \u041A\u0440\u043E\u043A 1: \u0412\u0441\u0442\u0430\u043D\u043E\u0432\u0456\u0442\u044C \u0434\u043E\u0434\u0430\u0442\u043E\u043A\n\n\u041E\u0431\u0435\u0440\u0456\u0442\u044C \u0432\u0430\u0448\u0443 \u043F\u043B\u0430\u0442\u0444\u043E\u0440\u043C\u0443 \u0442\u0430 \u0432\u0441\u0442\u0430\u043D\u043E\u0432\u0456\u0442\u044C \u0434\u043E\u0434\u0430\u0442\u043E\u043A:");
+async function showPlatformVideo(chatId: number, platform: "android" | "ios" | "windows") {
+  const videoKey = `${platform}_video`;
+  const linkKey = `${platform}_link`;
+  const videoUrl = await getConfigValue(videoKey, "");
+  const downloadLink = await getConfigValue(linkKey, `https://example.com/${platform}`);
+
+  const platformNames: Record<string, string> = {
+    android: "Android",
+    ios: "iOS",
+    windows: "Windows",
+  };
+
+  const buttons = {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: `\u{1F4E5} \u0417\u0430\u0432\u0430\u043D\u0442\u0430\u0436\u0438\u0442\u0438 ${platformNames[platform]}`, url: downloadLink }],
+        [{ text: "\u2705 \u042F \u0432\u0441\u0442\u0430\u043D\u043E\u0432\u0438\u0432 \u0434\u043E\u0434\u0430\u0442\u043E\u043A", callback_data: "installed_app" }],
+        [{ text: "\u{1F519} \u041D\u0430\u0437\u0430\u0434", callback_data: "go_home" }],
+      ],
+    },
+  };
 
   if (videoUrl) {
     try {
       const resolvedUrl = resolveVideoUrl(videoUrl);
-      await bot!.sendVideo(chatId, resolvedUrl, { caption: step1Text });
+      await bot!.sendVideo(chatId, resolvedUrl, {
+        caption: "\u{1F4F1} \u0406\u043D\u0441\u0442\u0440\u0443\u043A\u0446\u0456\u044F \u0437 \u0432\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D\u043D\u044F",
+        ...buttons,
+      });
     } catch (e) {
-      log(`Failed to send step1 video: ${e}`, "bot");
-      await bot!.sendMessage(chatId, step1Text);
+      log(`Failed to send ${platform} video: ${e}`, "bot");
+      await bot!.sendMessage(chatId, "\u{1F4F1} \u0406\u043D\u0441\u0442\u0440\u0443\u043A\u0446\u0456\u044F \u0437 \u0432\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D\u043D\u044F", buttons);
     }
   } else {
-    await bot!.sendMessage(chatId, step1Text);
+    await bot!.sendMessage(chatId, "\u{1F4F1} \u0406\u043D\u0441\u0442\u0440\u0443\u043A\u0446\u0456\u044F \u0437 \u0432\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D\u043D\u044F", buttons);
   }
-
-  await bot!.sendMessage(chatId, "\u041E\u0431\u0435\u0440\u0456\u0442\u044C \u043F\u043B\u0430\u0442\u0444\u043E\u0440\u043C\u0443:", {
-    reply_markup: {
-      inline_keyboard: [
-        [
-          { text: "\u{1F916} Android", url: androidLink },
-          { text: "\u{1F34E} iOS", url: iosLink },
-          { text: "\u{1F5A5} Windows", url: windowsLink },
-        ],
-        [{ text: "\u2705 \u042F \u0432\u0441\u0442\u0430\u043D\u043E\u0432\u0438\u0432 \u0434\u043E\u0434\u0430\u0442\u043E\u043A", callback_data: "installed_app" }],
-        [{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }],
-      ],
-    },
-  });
 }
 
 async function showStep2(chatId: number) {
@@ -617,14 +643,14 @@ export function startBot() {
       return;
     }
 
-    if (data === "go_step1") {
-      await storage.updateBotUser(tgId, { currentStep: "STEP_1" });
-      await showStep1(chatId);
+    if (data === "show_android" || data === "show_ios" || data === "show_windows") {
+      const platform = data.replace("show_", "") as "android" | "ios" | "windows";
+      await showPlatformVideo(chatId, platform);
       return;
     }
 
     if (data === "installed_app") {
-      if (user.currentStep === "STEP_1") {
+      if (user.currentStep === "HOME" || user.currentStep === "STEP_1") {
         await storage.updateBotUser(tgId, { currentStep: "STEP_2" });
         await showStep2(chatId);
       }
