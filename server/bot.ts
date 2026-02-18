@@ -129,10 +129,6 @@ async function showHome(chatId: number, tgId: string) {
           { text: "\u{1F34E} iOS", callback_data: "show_ios" },
           { text: "\u{1F5A5} Windows", callback_data: "show_windows" },
         ],
-        [{ text: "\u2705 \u042F \u0432\u0441\u0442\u0430\u043D\u043E\u0432\u0438\u0432 \u0434\u043E\u0434\u0430\u0442\u043E\u043A", callback_data: "installed_app" }],
-        [{ text: "\u{1F4B3} \u041F\u043E\u043F\u043E\u0432\u043D\u0438\u0442\u0438", callback_data: "go_payment" }],
-        [{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }],
-        [{ text: "\u{1F4CB} \u041F\u0440\u0430\u0432\u0438\u043B\u0430", callback_data: "rules" }],
       ],
     },
   };
