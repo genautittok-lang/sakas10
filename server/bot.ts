@@ -114,15 +114,15 @@ async function ensureUser(tgId: string, username?: string): Promise<any> {
   return user;
 }
 
-function resolveMediaSource(mediaPath: string): string | fs.ReadStream {
+function resolveMediaSource(mediaPath: string): string | fs.ReadStream | null {
   if (mediaPath.startsWith("/uploads/")) {
     const filePath = path.join(process.cwd(), mediaPath);
     if (fs.existsSync(filePath)) {
       log(`Sending media from disk: ${filePath}`, "bot");
       return fs.createReadStream(filePath);
     }
-    log(`File not found on disk: ${filePath}, falling back to URL`, "bot");
-    return `${getServerBaseUrl()}${mediaPath}`;
+    log(`File not found on disk: ${filePath}. Please re-upload media via admin panel after deploying.`, "bot");
+    return null;
   }
   if (mediaPath.startsWith("/")) {
     return `${getServerBaseUrl()}${mediaPath}`;
@@ -186,15 +186,19 @@ async function showHome(chatId: number, tgId: string) {
   };
 
   if (welcomeImage) {
-    try {
-      const source = resolveMediaSource(welcomeImage);
-      const fileOpts = getFileOptions(welcomeImage);
-      await bot!.sendPhoto(chatId, source, {
-        caption: "\u0417\u0430\u0432\u0430\u043D\u0442\u0430\u0436\u0442\u0435 \u0434\u043E\u0434\u0430\u0442\u043E\u043A \u0434\u043B\u044F \u0432\u0430\u0448\u043E\u0457 \u043F\u043B\u0430\u0442\u0444\u043E\u0440\u043C\u0438:",
-        ...buttons,
-      }, { ...fileOpts });
-    } catch (e) {
-      log(`Failed to send welcome image: ${e}`, "bot");
+    const source = resolveMediaSource(welcomeImage);
+    if (source) {
+      try {
+        const fileOpts = getFileOptions(welcomeImage);
+        await bot!.sendPhoto(chatId, source, {
+          caption: "\u0417\u0430\u0432\u0430\u043D\u0442\u0430\u0436\u0442\u0435 \u0434\u043E\u0434\u0430\u0442\u043E\u043A \u0434\u043B\u044F \u0432\u0430\u0448\u043E\u0457 \u043F\u043B\u0430\u0442\u0444\u043E\u0440\u043C\u0438:",
+          ...buttons,
+        }, { ...fileOpts });
+      } catch (e) {
+        log(`Failed to send welcome image: ${e}`, "bot");
+        await bot!.sendMessage(chatId, "\u041E\u0431\u0435\u0440\u0456\u0442\u044C \u0432\u0430\u0448\u0443 \u043F\u043B\u0430\u0442\u0444\u043E\u0440\u043C\u0443:", buttons);
+      }
+    } else {
       await bot!.sendMessage(chatId, "\u041E\u0431\u0435\u0440\u0456\u0442\u044C \u0432\u0430\u0448\u0443 \u043F\u043B\u0430\u0442\u0444\u043E\u0440\u043C\u0443:", buttons);
     }
   } else {
@@ -225,15 +229,19 @@ async function showPlatformVideo(chatId: number, platform: "android" | "ios" | "
   };
 
   if (videoUrl) {
-    try {
-      const source = resolveMediaSource(videoUrl);
-      const fileOpts = getFileOptions(videoUrl);
-      await bot!.sendVideo(chatId, source, {
-        caption: "\u{1F4F1} \u0406\u043D\u0441\u0442\u0440\u0443\u043A\u0446\u0456\u044F \u0437 \u0432\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D\u043D\u044F",
-        ...buttons,
-      }, { ...fileOpts });
-    } catch (e) {
-      log(`Failed to send ${platform} video: ${e}`, "bot");
+    const source = resolveMediaSource(videoUrl);
+    if (source) {
+      try {
+        const fileOpts = getFileOptions(videoUrl);
+        await bot!.sendVideo(chatId, source, {
+          caption: "\u{1F4F1} \u0406\u043D\u0441\u0442\u0440\u0443\u043A\u0446\u0456\u044F \u0437 \u0432\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D\u043D\u044F",
+          ...buttons,
+        }, { ...fileOpts });
+      } catch (e) {
+        log(`Failed to send ${platform} video: ${e}`, "bot");
+        await bot!.sendMessage(chatId, "\u{1F4F1} \u0406\u043D\u0441\u0442\u0440\u0443\u043A\u0446\u0456\u044F \u0437 \u0432\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D\u043D\u044F", buttons);
+      }
+    } else {
       await bot!.sendMessage(chatId, "\u{1F4F1} \u0406\u043D\u0441\u0442\u0440\u0443\u043A\u0446\u0456\u044F \u0437 \u0432\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D\u043D\u044F", buttons);
     }
   } else {
@@ -250,12 +258,16 @@ async function showStep2(chatId: number) {
   const text = step2Text.includes("Club ID") ? step2Text : `${step2Text}\n\n\u{1F194} Club ID: ${clubId}`;
 
   if (videoUrl) {
-    try {
-      const source = resolveMediaSource(videoUrl);
-      const fileOpts = getFileOptions(videoUrl);
-      await bot!.sendVideo(chatId, source, { caption: text }, { ...fileOpts });
-    } catch (e) {
-      log(`Failed to send step2 video: ${e}`, "bot");
+    const source = resolveMediaSource(videoUrl);
+    if (source) {
+      try {
+        const fileOpts = getFileOptions(videoUrl);
+        await bot!.sendVideo(chatId, source, { caption: text }, { ...fileOpts });
+      } catch (e) {
+        log(`Failed to send step2 video: ${e}`, "bot");
+        await bot!.sendMessage(chatId, text);
+      }
+    } else {
       await bot!.sendMessage(chatId, text);
     }
   } else {
@@ -311,98 +323,14 @@ async function showPaymentStep2(chatId: number, amount: number) {
   });
 }
 
-async function createConvert2payPayment(amount: number, playerId: string, paymentId: string): Promise<string | null> {
+async function getConvert2payLink(amount: number, playerId: string, paymentId: string): Promise<string | null> {
   const apiUrl = await getConfigValue("convert2pay_api_url", "");
-  const merchantId = await getConfigValue("convert2pay_merchant_id", "");
-  const secretKey = await getConfigValue("convert2pay_secret_key", "");
-  const currency = await getConfigValue("convert2pay_currency", "UAH");
-
-  if (!apiUrl) {
-    return null;
-  }
-
-  try {
-    log(`Convert2pay: fetching landing page: ${apiUrl}`, "bot");
-    const getResponse = await fetch(apiUrl);
-    const html = await getResponse.text();
-
-    const viewStateMatch = html.match(/name="__VIEWSTATE"[^>]*value="([^"]*)"/);
-    const viewStateGenMatch = html.match(/name="__VIEWSTATEGENERATOR"[^>]*value="([^"]*)"/);
-    const eventValMatch = html.match(/name="__EVENTVALIDATION"[^>]*value="([^"]*)"/);
-
-    if (viewStateMatch) {
-      log(`Convert2pay: submitting form with amount=${amount}, client_id=${playerId}`, "bot");
-      const formData = new URLSearchParams();
-      formData.append("__VIEWSTATE", viewStateMatch[1]);
-      if (viewStateGenMatch) formData.append("__VIEWSTATEGENERATOR", viewStateGenMatch[1]);
-      if (eventValMatch) formData.append("__EVENTVALIDATION", eventValMatch[1]);
-      formData.append("order_id", paymentId);
-      formData.append("client_id", playerId);
-      formData.append("amount", String(amount));
-      formData.append("currency", currency);
-
-      const postResponse = await fetch(apiUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: formData.toString(),
-        redirect: "manual",
-      });
-
-      const location = postResponse.headers.get("location");
-      if (location) {
-        log(`Convert2pay: got redirect URL: ${location}`, "bot");
-        return location;
-      }
-
-      const postHtml = await postResponse.text();
-      log(`Convert2pay POST response (${postResponse.status}): ${postHtml.substring(0, 800)}`, "bot");
-
-      const linkMatch = postHtml.match(/href="(https?:\/\/[^"]*pay[^"]*)"/i) 
-        || postHtml.match(/window\.location\s*=\s*["'](https?:\/\/[^"']*)/i)
-        || postHtml.match(/action="(https?:\/\/[^"]*)"/i);
-      if (linkMatch) {
-        log(`Convert2pay: extracted payment URL from response: ${linkMatch[1]}`, "bot");
-        return linkMatch[1];
-      }
-
-      log(`Convert2pay: no redirect or payment URL found in POST response`, "bot");
-    } else {
-      log(`Convert2pay: page is not ASP.NET form, trying JSON API`, "bot");
-      if (merchantId && secretKey) {
-        const response = await fetch(apiUrl, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "Authorization": `Bearer ${secretKey}`,
-          },
-          body: JSON.stringify({
-            merchant_id: merchantId,
-            amount,
-            currency,
-            order_id: paymentId,
-            description: `Payment ${playerId}`,
-            player_id: playerId,
-          }),
-        });
-        const responseText = await response.text();
-        log(`Convert2pay API response (${response.status}): ${responseText.substring(0, 500)}`, "bot");
-        try {
-          const data = JSON.parse(responseText);
-          const link = data.payment_url || data.url || data.redirect_url || data.link || null;
-          if (link) return link;
-        } catch {}
-      }
-    }
-  } catch (err) {
-    log(`Convert2pay request failed: ${err}`, "bot");
-  }
-
-  log(`Convert2pay: fallback - using URL directly: ${apiUrl}`, "bot");
+  if (!apiUrl) return null;
   return apiUrl;
 }
 
 async function showPaymentStep3(chatId: number, amount: number, playerId: string, paymentId: string, tgId: string, username: string | null) {
-  let payLink = await createConvert2payPayment(amount, playerId, paymentId);
+  let payLink = await getConvert2payLink(amount, playerId, paymentId);
 
   if (!payLink) {
     const paymentLink = await getConfigValue("payment_link_template", "");
@@ -429,10 +357,10 @@ async function showPaymentStep3(chatId: number, amount: number, playerId: string
   }
 
   await bot!.sendMessage(chatId,
-    `\u{1F4B3} \u041E\u043F\u043B\u0430\u0442\u0430\n\n\u{1F4B0} \u0421\u0443\u043C\u0430: ${amount} \u20B4\n\u{1F3AE} Player ID: ${playerId}\n\n\u041D\u0430\u0442\u0438\u0441\u043D\u0456\u0442\u044C \u043A\u043D\u043E\u043F\u043A\u0443 \u043D\u0438\u0436\u0447\u0435 \u0434\u043B\u044F \u043E\u043F\u043B\u0430\u0442\u0438:`, {
+    `\u{1F4B3} \u041E\u043F\u043B\u0430\u0442\u0430\n\n\u{1F4B0} \u0421\u0443\u043C\u0430: ${amount} \u20B4\n\u{1F3AE} Player ID: ${playerId}\n\n\u{1F449} \u041D\u0430\u0442\u0438\u0441\u043D\u0456\u0442\u044C "\u041E\u043F\u043B\u0430\u0442\u0438\u0442\u0438" \u0442\u0430 \u0432\u0432\u0435\u0434\u0456\u0442\u044C \u0441\u0443\u043C\u0443 ${amount} \u0443 \u043F\u043E\u043B\u0456 amount`, {
     reply_markup: {
       inline_keyboard: [
-        [{ text: "\u{1F4B3} \u041E\u043F\u043B\u0430\u0442\u0438\u0442\u0438", url: payLink }],
+        [{ text: `\u{1F4B3} \u041E\u043F\u043B\u0430\u0442\u0438\u0442\u0438 ${amount} \u20B4`, url: payLink }],
         [{ text: "\u{1F504} \u041F\u0435\u0440\u0435\u0432\u0456\u0440\u0438\u0442\u0438 \u043E\u043F\u043B\u0430\u0442\u0443", callback_data: `check_payment_${paymentId}` }],
         [{ text: "\u{1F3E0} \u0413\u043E\u043B\u043E\u0432\u043D\u0430", callback_data: "go_home" }],
       ],

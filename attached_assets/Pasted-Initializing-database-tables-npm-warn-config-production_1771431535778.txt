@@ -1,0 +1,34 @@
+Initializing database tables...
+npm warn config production Use `--omit=dev` instead.
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.cjs
+Database tables initialized successfully.
+Demo data cleanup completed.
+4:17:48 PM [bot] Telegram bot started
+4:17:49 PM [express] serving on port 8080
+Starting Container
+4:17:49 PM [express] GET /api/stats 200 in 40ms :: {"totalUsers":5,"stepCounts":{"HOME":1,"STEP_1":0,"STEP_2":1,"STEP_3":0,"PAYMENT":3},"bonusClaimed":1,"totalPayments":7,"paidCount":0,"totalRevenue":0,"pendingMessages":10,"pendingPayments":7}
+error: [polling_error] {"code":"ETELEGRAM","message":"ETELEGRAM: 409 Conflict: terminated by other getUpdates request; make sure that only one bot instance is running"}
+4:18:15 PM [bot] File not found on disk: /app/uploads/1771429207601_ae04fac7.jpg, falling back to URL
+4:18:15 PM [bot] Failed to send welcome image: Error: ETELEGRAM: 400 Bad Request: wrong type of the web page content
+4:18:17 PM [bot] File not found on disk: /app/uploads/1771429228141_439e37da.mov, falling back to URL
+4:18:17 PM [bot] Failed to send android video: Error: ETELEGRAM: 400 Bad Request: wrong type of the web page content
+4:18:19 PM [bot] File not found on disk: /app/uploads/1771375009532_5874fa1c.mov, falling back to URL
+4:18:19 PM [bot] Failed to send step2 video: Error: ETELEGRAM: 400 Bad Request: wrong type of the web page content
+4:18:31 PM [bot] Convert2pay: fetching landing page: https://cabinet.konvert2pay.me/Landing/GCPM77w6x98TFbtu88Eq
+4:18:31 PM [bot] Convert2pay: submitting form with amount=500, client_id=123456789
+4:18:31 PM [bot] Convert2pay POST response (500): 
+
+<!DOCTYPE html>
+<html lang="ru">
+
+<head><title>
+	Ошибка сервера | Konvert2pay
+</title><meta charset="utf-8" /><meta http-equiv="X-UA-Compatible" content="IE=edge" /><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, shrink-to-fit=no" /><link rel="icon" type="image/x-icon" href="../assets/img/favicon.ico" />
+    <!-- BEGIN GLOBAL MANDATORY STYLES -->
+    <link href="https://fonts.googleapis.com/css?family=Nunito:400,600,700" rel="stylesheet" /><link href="../bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css" /><link href="../assets/css/plugins.css" rel="stylesheet" type="text/css" /><link href="../assets/css/pages/error/style-400.css" rel="stylesheet" type="text/css" />
+    <!-- END GLOBAL MANDATORY STYLES -->    
+</head>
+<body 
+4:18:31 PM [bot] Convert2pay: no redirect or payment URL found in POST response
+4:18:31 PM [bot] Convert2pay: fallback - using URL directly: https://cabinet.konvert2pay.me/Landing/GCPM77w6x98TFbtu88Eq
