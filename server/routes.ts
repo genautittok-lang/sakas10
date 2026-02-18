@@ -279,6 +279,62 @@ export async function registerRoutes(
     res.json({ success: true });
   });
 
+  app.get("/pay/:paymentId", async (req, res) => {
+    const { paymentId } = req.params;
+    const payment = await storage.getPayment(paymentId);
+    if (!payment) {
+      return res.status(404).send("Payment not found");
+    }
+
+    const convert2payUrl = await storage.getConfig("convert2pay_api_url");
+    const merchantId = await storage.getConfig("convert2pay_merchant_id");
+    const currency = await storage.getConfig("convert2pay_currency") || "UAH";
+
+    if (!convert2payUrl) {
+      return res.status(500).send("Payment system not configured");
+    }
+
+    function esc(val: string): string {
+      return val.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    const safeUrl = esc(convert2payUrl);
+    const safeAmount = esc(String(payment.amount));
+    const safeOrderId = esc(paymentId);
+    const safeClientId = esc(payment.playerId || '');
+    const safeCurrency = esc(currency);
+    const safeMerchantId = merchantId ? esc(merchantId) : '';
+
+    res.send(`<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Redirecting to payment...</title>
+  <style>
+    body { display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; font-family: sans-serif; background: #f5f5f5; }
+    .loader { text-align: center; }
+    .spinner { width: 40px; height: 40px; border: 4px solid #ddd; border-top: 4px solid #333; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+  </style>
+</head>
+<body>
+  <div class="loader">
+    <div class="spinner"></div>
+    <p>Redirecting to payment...</p>
+  </div>
+  <form id="payForm" method="POST" action="${safeUrl}">
+    <input type="hidden" name="amount" value="${safeAmount}" />
+    <input type="hidden" name="order_id" value="${safeOrderId}" />
+    <input type="hidden" name="client_id" value="${safeClientId}" />
+    <input type="hidden" name="currency" value="${safeCurrency}" />
+    ${safeMerchantId ? `<input type="hidden" name="merchant_id" value="${safeMerchantId}" />` : ''}
+  </form>
+  <script>document.getElementById('payForm').submit();</script>
+</body>
+</html>`);
+  });
+
   app.get("/api/stats", async (_req, res) => {
     const users = await storage.getAllBotUsers();
     const payments = await storage.getAllPayments();

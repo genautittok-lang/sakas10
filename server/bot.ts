@@ -327,15 +327,12 @@ async function getConvert2payLink(amount: number, playerId: string, paymentId: s
   const apiUrl = await getConfigValue("convert2pay_api_url", "");
   if (!apiUrl) return null;
 
-  if (apiUrl.includes("{amount}") || apiUrl.includes("{player_id}") || apiUrl.includes("{payment_id}")) {
-    return apiUrl
-      .replace("{amount}", String(amount))
-      .replace("{player_id}", playerId)
-      .replace("{payment_id}", paymentId);
+  const baseUrl = process.env.PUBLIC_BASE_URL;
+  if (!baseUrl) {
+    log("WARNING: PUBLIC_BASE_URL not set. Payment links will not work in production. Set it to your Railway deployment URL.", "bot");
+    return null;
   }
-
-  const separator = apiUrl.includes("?") ? "&" : "?";
-  return `${apiUrl}${separator}amount=${amount}`;
+  return `${baseUrl}/pay/${paymentId}`;
 }
 
 async function showPaymentStep3(chatId: number, amount: number, playerId: string, paymentId: string, tgId: string, username: string | null) {
