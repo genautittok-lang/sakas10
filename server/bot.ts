@@ -327,7 +327,7 @@ async function getConvert2payLink(amount: number, playerId: string, paymentId: s
   const apiUrl = await getConfigValue("convert2pay_api_url", "");
   if (!apiUrl) return null;
 
-  const baseUrl = process.env.PUBLIC_BASE_URL;
+  const baseUrl = (process.env.PUBLIC_BASE_URL || '').replace(/\/+$/, '');
   if (!baseUrl) {
     log("WARNING: PUBLIC_BASE_URL not set. Payment links will not work in production. Set it to your Railway deployment URL.", "bot");
     return null;
