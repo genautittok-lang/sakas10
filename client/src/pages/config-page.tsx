@@ -35,7 +35,7 @@ const CONFIG_FIELDS: ConfigField[] = [
   { key: "ios_link", label: "Посилання iOS", description: "URL для завантаження на iOS", type: "url", placeholder: "https://apps.apple.com/..." },
   { key: "windows_link", label: "Посилання Windows", description: "URL для завантаження на Windows", type: "url", placeholder: "https://example.com/download" },
   { key: "payment_amounts", label: "Суми оплати", description: "Фіксовані суми для кнопок оплати (через кому)", type: "text", placeholder: "100, 200, 500, 1000, 2000, 5000" },
-  { key: "convert2pay_api_url", label: "Convert2pay API URL", description: "URL ендпоінту Convert2pay API", type: "url", placeholder: "https://api.convert2pay.com/v1/payment" },
+  { key: "convert2pay_api_url", label: "Convert2pay URL", description: "URL сторінки оплати. Сума додається автоматично (?amount=X). Або шаблон з {amount}, {player_id}, {payment_id}", type: "text", placeholder: "https://cabinet.konvert2pay.me/Landing/..." },
   { key: "convert2pay_merchant_id", label: "Convert2pay Merchant ID", description: "Ідентифікатор мерчанта Convert2pay", type: "text", placeholder: "merchant_123" },
   { key: "convert2pay_secret_key", label: "Convert2pay Secret Key", description: "Секретний ключ API Convert2pay", type: "text", placeholder: "sk_live_..." },
   { key: "convert2pay_currency", label: "Convert2pay валюта", description: "Код валюти (за замовчуванням UAH)", type: "text", placeholder: "UAH" },

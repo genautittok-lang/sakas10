@@ -326,7 +326,16 @@ async function showPaymentStep2(chatId: number, amount: number) {
 async function getConvert2payLink(amount: number, playerId: string, paymentId: string): Promise<string | null> {
   const apiUrl = await getConfigValue("convert2pay_api_url", "");
   if (!apiUrl) return null;
-  return apiUrl;
+
+  if (apiUrl.includes("{amount}") || apiUrl.includes("{player_id}") || apiUrl.includes("{payment_id}")) {
+    return apiUrl
+      .replace("{amount}", String(amount))
+      .replace("{player_id}", playerId)
+      .replace("{payment_id}", paymentId);
+  }
+
+  const separator = apiUrl.includes("?") ? "&" : "?";
+  return `${apiUrl}${separator}amount=${amount}`;
 }
 
 async function showPaymentStep3(chatId: number, amount: number, playerId: string, paymentId: string, tgId: string, username: string | null) {
@@ -357,7 +366,7 @@ async function showPaymentStep3(chatId: number, amount: number, playerId: string
   }
 
   await bot!.sendMessage(chatId,
-    `\u{1F4B3} \u041E\u043F\u043B\u0430\u0442\u0430\n\n\u{1F4B0} \u0421\u0443\u043C\u0430: ${amount} \u20B4\n\u{1F3AE} Player ID: ${playerId}\n\n\u{1F449} \u041D\u0430\u0442\u0438\u0441\u043D\u0456\u0442\u044C "\u041E\u043F\u043B\u0430\u0442\u0438\u0442\u0438" \u0442\u0430 \u0432\u0432\u0435\u0434\u0456\u0442\u044C \u0441\u0443\u043C\u0443 ${amount} \u0443 \u043F\u043E\u043B\u0456 amount`, {
+    `\u{1F4B3} \u041E\u043F\u043B\u0430\u0442\u0430\n\n\u{1F4B0} \u0421\u0443\u043C\u0430: ${amount} \u20B4\n\u{1F3AE} Player ID: ${playerId}\n\n\u{1F449} \u041D\u0430\u0442\u0438\u0441\u043D\u0456\u0442\u044C \u043A\u043D\u043E\u043F\u043A\u0443 \u043D\u0438\u0436\u0447\u0435 \u0434\u043B\u044F \u043E\u043F\u043B\u0430\u0442\u0438:`, {
     reply_markup: {
       inline_keyboard: [
         [{ text: `\u{1F4B3} \u041E\u043F\u043B\u0430\u0442\u0438\u0442\u0438 ${amount} \u20B4`, url: payLink }],
