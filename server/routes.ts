@@ -283,56 +283,60 @@ export async function registerRoutes(
     const { paymentId } = req.params;
     const payment = await storage.getPayment(paymentId);
     if (!payment) {
-      return res.status(404).send("Payment not found");
+      return res.status(404).send("<h3>Payment not found</h3>");
     }
 
     const convert2payUrl = await storage.getConfig("convert2pay_api_url");
-    const merchantId = await storage.getConfig("convert2pay_merchant_id");
-    const currency = await storage.getConfig("convert2pay_currency") || "UAH";
-
     if (!convert2payUrl) {
-      return res.status(500).send("Payment system not configured");
+      return res.status(500).send("<h3>Payment system not configured</h3>");
     }
 
-    function esc(val: string): string {
-      return val.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    try {
+      const getResp = await fetch(convert2payUrl);
+      const html = await getResp.text();
+
+      const viewStateMatch = html.match(/name="__VIEWSTATE"[^>]*value="([^"]*)"/);
+      const viewStateGenMatch = html.match(/name="__VIEWSTATEGENERATOR"[^>]*value="([^"]*)"/);
+      const eventValidationMatch = html.match(/name="__EVENTVALIDATION"[^>]*value="([^"]*)"/);
+
+      if (!viewStateMatch || !eventValidationMatch) {
+        console.log("[pay] Could not extract ASP.NET tokens from Convert2pay page");
+        return res.redirect(convert2payUrl);
+      }
+
+      const formData = new URLSearchParams();
+      formData.append("__VIEWSTATE", viewStateMatch[1]);
+      if (viewStateGenMatch) formData.append("__VIEWSTATEGENERATOR", viewStateGenMatch[1]);
+      formData.append("__EVENTVALIDATION", eventValidationMatch[1]);
+      formData.append("Order_ID", paymentId);
+      formData.append("Client_Id", payment.playerId || '');
+      formData.append("Amount", String(payment.amount));
+      formData.append("Click", "\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C");
+
+      const postResp = await fetch(convert2payUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: formData.toString(),
+        redirect: "manual",
+      });
+      const resultHtml = await postResp.text();
+
+      const invoiceMatch = resultHtml.match(/id="InvoiceHref"[^>]*>(https?:\/\/[^<]+)</);
+      if (invoiceMatch) {
+        return res.redirect(invoiceMatch[1]);
+      }
+
+      const linkMatch = resultHtml.match(/href="(https?:\/\/[^"]*(?:pay|invoice|checkout)[^"]*)"/i);
+      if (linkMatch) {
+        return res.redirect(linkMatch[1]);
+      }
+
+      console.log("[pay] Could not find payment link in Convert2pay response");
+      return res.redirect(convert2payUrl);
+    } catch (err) {
+      console.log(`[pay] Error processing Convert2pay: ${err}`);
+      return res.redirect(convert2payUrl);
     }
-
-    const safeUrl = esc(convert2payUrl);
-    const safeAmount = esc(String(payment.amount));
-    const safeOrderId = esc(paymentId);
-    const safeClientId = esc(payment.playerId || '');
-    const safeCurrency = esc(currency);
-    const safeMerchantId = merchantId ? esc(merchantId) : '';
-
-    res.send(`<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Redirecting to payment...</title>
-  <style>
-    body { display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; font-family: sans-serif; background: #f5f5f5; }
-    .loader { text-align: center; }
-    .spinner { width: 40px; height: 40px; border: 4px solid #ddd; border-top: 4px solid #333; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-  </style>
-</head>
-<body>
-  <div class="loader">
-    <div class="spinner"></div>
-    <p>Redirecting to payment...</p>
-  </div>
-  <form id="payForm" method="POST" action="${safeUrl}">
-    <input type="hidden" name="amount" value="${safeAmount}" />
-    <input type="hidden" name="order_id" value="${safeOrderId}" />
-    <input type="hidden" name="client_id" value="${safeClientId}" />
-    <input type="hidden" name="currency" value="${safeCurrency}" />
-    ${safeMerchantId ? `<input type="hidden" name="merchant_id" value="${safeMerchantId}" />` : ''}
-  </form>
-  <script>document.getElementById('payForm').submit();</script>
-</body>
-</html>`);
   });
 
   app.get("/api/stats", async (_req, res) => {
