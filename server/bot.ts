@@ -91,7 +91,12 @@ async function sendManagerNotification(tgId: string, username: string | null, st
       },
     });
   } catch (err) {
-    log(`Failed to send manager notification: ${err}`, "bot");
+    const errMsg = String(err);
+    if (errMsg.includes("chat not found")) {
+      log(`Manager chat ID "${managerChatId}" not found. Make sure to use a numeric Chat ID (not username). You can get it by messaging @userinfobot on Telegram.`, "bot");
+    } else {
+      log(`Failed to send manager notification: ${err}`, "bot");
+    }
   }
 }
 
@@ -313,6 +318,7 @@ async function createConvert2payPayment(amount: number, playerId: string, paymen
   }
 
   try {
+    log(`Convert2pay request to: ${apiUrl}`, "bot");
     const response = await fetch(apiUrl, {
       method: "POST",
       headers: {
@@ -329,13 +335,21 @@ async function createConvert2payPayment(amount: number, playerId: string, paymen
       }),
     });
 
+    const responseText = await response.text();
+    log(`Convert2pay response (${response.status}): ${responseText.substring(0, 500)}`, "bot");
+
     if (!response.ok) {
       log(`Convert2pay API error: ${response.status}`, "bot");
       return null;
     }
 
-    const data = await response.json();
-    return data.payment_url || data.url || data.redirect_url || null;
+    try {
+      const data = JSON.parse(responseText);
+      return data.payment_url || data.url || data.redirect_url || data.link || null;
+    } catch {
+      log(`Convert2pay returned non-JSON response`, "bot");
+      return null;
+    }
   } catch (err) {
     log(`Convert2pay request failed: ${err}`, "bot");
     return null;

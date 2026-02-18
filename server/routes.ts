@@ -9,6 +9,7 @@ import { randomUUID } from "crypto";
 import fs from "fs";
 import express from "express";
 
+
 const uploadsDir = path.join(process.cwd(), "uploads");
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
@@ -93,10 +94,42 @@ export async function registerRoutes(
     console.error("Seed defaults error:", e);
   }
 
-  app.post("/api/upload", upload.single("file"), (req, res) => {
+  app.post("/api/upload", upload.single("file"), async (req, res) => {
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
     }
+    
+    const mimetype = req.file.mimetype;
+    const ext = path.extname(req.file.filename).toLowerCase();
+    const needsConversion = mimetype === "video/quicktime" || ext === ".mov";
+    
+    if (needsConversion) {
+      const inputPath = path.join(uploadsDir, req.file.filename);
+      const mp4Filename = req.file.filename.replace(/\.[^.]+$/, ".mp4");
+      const outputPath = path.join(uploadsDir, mp4Filename);
+      
+      try {
+        const { exec } = require("child_process");
+        await new Promise<void>((resolve, reject) => {
+          const proc = exec(
+            `ffmpeg -y -i "${inputPath}" -c:v libx264 -preset fast -crf 23 -c:a aac -movflags +faststart "${outputPath}"`,
+            { timeout: 120000 },
+            (error: any) => {
+              if (error) reject(error);
+              else resolve();
+            }
+          );
+        });
+        fs.unlinkSync(inputPath);
+        const url = `/uploads/${mp4Filename}`;
+        return res.json({ url });
+      } catch (err) {
+        console.error("FFmpeg conversion failed:", err);
+        const url = `/uploads/${req.file.filename}`;
+        return res.json({ url });
+      }
+    }
+    
     const url = `/uploads/${req.file.filename}`;
     res.json({ url });
   });
