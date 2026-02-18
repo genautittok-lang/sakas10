@@ -2,6 +2,8 @@ import TelegramBot from "node-telegram-bot-api";
 import { storage } from "./storage";
 import { log } from "./index";
 import { randomUUID } from "crypto";
+import fs from "fs";
+import path from "path";
 
 let bot: TelegramBot | null = null;
 
@@ -107,11 +109,18 @@ async function ensureUser(tgId: string, username?: string): Promise<any> {
   return user;
 }
 
-function resolveVideoUrl(videoUrl: string): string {
-  if (videoUrl.startsWith("/")) {
-    return `${getServerBaseUrl()}${videoUrl}`;
+function resolveMediaSource(mediaPath: string): string {
+  if (mediaPath.startsWith("/uploads/")) {
+    const filePath = path.join(process.cwd(), mediaPath);
+    if (fs.existsSync(filePath)) {
+      return filePath;
+    }
+    return `${getServerBaseUrl()}${mediaPath}`;
   }
-  return videoUrl;
+  if (mediaPath.startsWith("/")) {
+    return `${getServerBaseUrl()}${mediaPath}`;
+  }
+  return mediaPath;
 }
 
 const PERSISTENT_MANAGER_KEYBOARD = {
@@ -149,8 +158,8 @@ async function showHome(chatId: number, tgId: string) {
 
   if (welcomeImage) {
     try {
-      const resolvedUrl = resolveVideoUrl(welcomeImage);
-      await bot!.sendPhoto(chatId, resolvedUrl, {
+      const source = resolveMediaSource(welcomeImage);
+      await bot!.sendPhoto(chatId, source, {
         caption: "\u0417\u0430\u0432\u0430\u043D\u0442\u0430\u0436\u0442\u0435 \u0434\u043E\u0434\u0430\u0442\u043E\u043A \u0434\u043B\u044F \u0432\u0430\u0448\u043E\u0457 \u043F\u043B\u0430\u0442\u0444\u043E\u0440\u043C\u0438:",
         ...buttons,
       });
@@ -187,8 +196,8 @@ async function showPlatformVideo(chatId: number, platform: "android" | "ios" | "
 
   if (videoUrl) {
     try {
-      const resolvedUrl = resolveVideoUrl(videoUrl);
-      await bot!.sendVideo(chatId, resolvedUrl, {
+      const source = resolveMediaSource(videoUrl);
+      await bot!.sendVideo(chatId, source, {
         caption: "\u{1F4F1} \u0406\u043D\u0441\u0442\u0440\u0443\u043A\u0446\u0456\u044F \u0437 \u0432\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D\u043D\u044F",
         ...buttons,
       });
@@ -211,8 +220,8 @@ async function showStep2(chatId: number) {
 
   if (videoUrl) {
     try {
-      const resolvedUrl = resolveVideoUrl(videoUrl);
-      await bot!.sendVideo(chatId, resolvedUrl, { caption: text });
+      const source = resolveMediaSource(videoUrl);
+      await bot!.sendVideo(chatId, source, { caption: text });
     } catch (e) {
       log(`Failed to send step2 video: ${e}`, "bot");
       await bot!.sendMessage(chatId, text);
