@@ -166,6 +166,7 @@ async function showPlatformVideo(chatId: number, platform: "android" | "ios" | "
       inline_keyboard: [
         [{ text: `\u{1F4E5} \u0417\u0430\u0432\u0430\u043D\u0442\u0430\u0436\u0438\u0442\u0438 ${platformNames[platform]}`, url: downloadLink }],
         [{ text: "\u2705 \u042F \u0432\u0441\u0442\u0430\u043D\u043E\u0432\u0438\u0432 \u0434\u043E\u0434\u0430\u0442\u043E\u043A", callback_data: "installed_app" }],
+        [{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7", callback_data: "manager" }],
         [{ text: "\u{1F519} \u041D\u0430\u0437\u0430\u0434", callback_data: "go_home" }],
       ],
     },
