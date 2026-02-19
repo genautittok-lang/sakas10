@@ -295,6 +295,9 @@ export async function registerRoutes(
       const getResp = await fetch(convert2payUrl);
       const html = await getResp.text();
 
+      const cookies = getResp.headers.getSetCookie?.() || [];
+      const cookieHeader = cookies.map(c => c.split(';')[0]).join('; ');
+
       const viewStateMatch = html.match(/name="__VIEWSTATE"[^>]*value="([^"]*)"/);
       const viewStateGenMatch = html.match(/name="__VIEWSTATEGENERATOR"[^>]*value="([^"]*)"/);
       const eventValidationMatch = html.match(/name="__EVENTVALIDATION"[^>]*value="([^"]*)"/);
@@ -313,9 +316,16 @@ export async function registerRoutes(
       formData.append("Amount", String(payment.amount));
       formData.append("Click", "\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C");
 
+      const postHeaders: Record<string, string> = {
+        "Content-Type": "application/x-www-form-urlencoded",
+      };
+      if (cookieHeader) {
+        postHeaders["Cookie"] = cookieHeader;
+      }
+
       const postResp = await fetch(convert2payUrl, {
         method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        headers: postHeaders,
         body: formData.toString(),
         redirect: "manual",
       });
@@ -323,11 +333,13 @@ export async function registerRoutes(
 
       const invoiceMatch = resultHtml.match(/id="InvoiceHref"[^>]*>(https?:\/\/[^<]+)</);
       if (invoiceMatch) {
+        console.log(`[pay] Payment ${paymentId} -> ${invoiceMatch[1]}`);
         return res.redirect(invoiceMatch[1]);
       }
 
       const linkMatch = resultHtml.match(/href="(https?:\/\/[^"]*(?:pay|invoice|checkout)[^"]*)"/i);
       if (linkMatch) {
+        console.log(`[pay] Payment ${paymentId} -> ${linkMatch[1]}`);
         return res.redirect(linkMatch[1]);
       }
 
