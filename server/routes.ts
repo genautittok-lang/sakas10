@@ -295,9 +295,6 @@ export async function registerRoutes(
       const getResp = await fetch(convert2payUrl);
       const html = await getResp.text();
 
-      const cookies = getResp.headers.getSetCookie?.() || [];
-      const cookieHeader = cookies.map(c => c.split(';')[0]).join('; ');
-
       const viewStateMatch = html.match(/name="__VIEWSTATE"[^>]*value="([^"]*)"/);
       const viewStateGenMatch = html.match(/name="__VIEWSTATEGENERATOR"[^>]*value="([^"]*)"/);
       const eventValidationMatch = html.match(/name="__EVENTVALIDATION"[^>]*value="([^"]*)"/);
@@ -307,44 +304,30 @@ export async function registerRoutes(
         return res.redirect(convert2payUrl);
       }
 
-      const formData = new URLSearchParams();
-      formData.append("__VIEWSTATE", viewStateMatch[1]);
-      if (viewStateGenMatch) formData.append("__VIEWSTATEGENERATOR", viewStateGenMatch[1]);
-      formData.append("__EVENTVALIDATION", eventValidationMatch[1]);
-      formData.append("Order_ID", paymentId);
-      formData.append("Client_Id", payment.playerId || '');
-      formData.append("Amount", String(payment.amount));
-      formData.append("Click", "\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C");
+      const escHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
-      const postHeaders: Record<string, string> = {
-        "Content-Type": "application/x-www-form-urlencoded",
-      };
-      if (cookieHeader) {
-        postHeaders["Cookie"] = cookieHeader;
-      }
+      const autoSubmitPage = `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Переходимо до оплати...</title>
+<style>body{font-family:sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;margin:0;background:#f5f5f5}
+.box{text-align:center;padding:2rem}.spinner{width:40px;height:40px;border:4px solid #ddd;border-top:4px solid #2196F3;border-radius:50%;animation:spin 1s linear infinite;margin:1rem auto}
+@keyframes spin{to{transform:rotate(360deg)}}</style></head>
+<body><div class="box"><div class="spinner"></div><p>Переходимо до оплати...</p></div>
+<form id="payForm" method="POST" action="${escHtml(convert2payUrl)}">
+<input type="hidden" name="__VIEWSTATE" value="${escHtml(viewStateMatch[1])}">
+${viewStateGenMatch ? `<input type="hidden" name="__VIEWSTATEGENERATOR" value="${escHtml(viewStateGenMatch[1])}">` : ''}
+<input type="hidden" name="__EVENTVALIDATION" value="${escHtml(eventValidationMatch[1])}">
+<input type="hidden" name="Order_ID" value="${escHtml(paymentId)}">
+<input type="hidden" name="Client_Id" value="${escHtml(payment.playerId || '')}">
+<input type="hidden" name="Amount" value="${escHtml(String(payment.amount))}">
+<input type="hidden" name="Click" value="\u041E\u0442\u043F\u0440\u0430\u0432\u0438\u0442\u044C">
+</form>
+<script>document.getElementById('payForm').submit();</script>
+</body></html>`;
 
-      const postResp = await fetch(convert2payUrl, {
-        method: "POST",
-        headers: postHeaders,
-        body: formData.toString(),
-        redirect: "manual",
-      });
-      const resultHtml = await postResp.text();
-
-      const invoiceMatch = resultHtml.match(/id="InvoiceHref"[^>]*>(https?:\/\/[^<]+)</);
-      if (invoiceMatch) {
-        console.log(`[pay] Payment ${paymentId} -> ${invoiceMatch[1]}`);
-        return res.redirect(invoiceMatch[1]);
-      }
-
-      const linkMatch = resultHtml.match(/href="(https?:\/\/[^"]*(?:pay|invoice|checkout)[^"]*)"/i);
-      if (linkMatch) {
-        console.log(`[pay] Payment ${paymentId} -> ${linkMatch[1]}`);
-        return res.redirect(linkMatch[1]);
-      }
-
-      console.log("[pay] Could not find payment link in Convert2pay response");
-      return res.redirect(convert2payUrl);
+      console.log(`[pay] Payment ${paymentId}: serving auto-submit form to ${convert2payUrl}`);
+      return res.type('html').send(autoSubmitPage);
     } catch (err) {
       console.log(`[pay] Error processing Convert2pay: ${err}`);
       return res.redirect(convert2payUrl);
