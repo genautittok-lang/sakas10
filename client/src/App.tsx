@@ -1,14 +1,17 @@
 import { useState, useEffect } from "react";
 import { Switch, Route, useLocation } from "wouter";
-import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient, apiRequest } from "./lib/queryClient";
+import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { Moon, Sun } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Moon, Sun, Lock, LogOut } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import UsersPage from "@/pages/users-page";
@@ -67,6 +70,64 @@ function ThemeToggle() {
   );
 }
 
+function LoginPage({ onLogin }: { onLogin: () => void }) {
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+    try {
+      await apiRequest("POST", "/api/auth/login", { password });
+      onLogin();
+    } catch {
+      setError("Невірний пароль");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-sm">
+        <CardHeader className="space-y-1">
+          <div className="flex items-center justify-center gap-2">
+            <Lock className="h-5 w-5 text-muted-foreground" />
+            <CardTitle className="text-xl" data-testid="text-login-title">Адмін панель</CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Input
+                type="password"
+                placeholder="Пароль"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                data-testid="input-login-password"
+                autoFocus
+              />
+              {error && (
+                <p className="text-sm text-destructive" data-testid="text-login-error">{error}</p>
+              )}
+            </div>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={loading || !password}
+              data-testid="button-login-submit"
+            >
+              {loading ? "Вхід..." : "Увійти"}
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 function AppLayout() {
   const [location] = useLocation();
   const currentPageName = pageNames[location] || "Сторінка";
@@ -74,6 +135,13 @@ function AppLayout() {
   const style = {
     "--sidebar-width": "16rem",
     "--sidebar-width-icon": "3rem",
+  };
+
+  const handleLogout = async () => {
+    try {
+      await apiRequest("POST", "/api/auth/logout");
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/status"] });
+    } catch {}
   };
 
   return (
@@ -87,7 +155,17 @@ function AppLayout() {
               <Separator orientation="vertical" className="h-5" />
               <span className="text-sm font-semibold" data-testid="text-page-title">{currentPageName}</span>
             </div>
-            <ThemeToggle />
+            <div className="flex items-center gap-1">
+              <ThemeToggle />
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={handleLogout}
+                data-testid="button-logout"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
           </header>
           <main className="flex-1 overflow-auto">
             <Router />
@@ -98,11 +176,35 @@ function AppLayout() {
   );
 }
 
+function AuthGate() {
+  const { data, isLoading } = useQuery<{ authenticated: boolean }>({
+    queryKey: ["/api/auth/status"],
+  });
+
+  const handleLogin = () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/auth/status"] });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="h-8 w-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  if (!data?.authenticated) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
+
+  return <AppLayout />;
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <AppLayout />
+        <AuthGate />
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>

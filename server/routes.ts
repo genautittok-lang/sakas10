@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { startBot, notifyManagerPayment, sendMessageToUser } from "./bot";
@@ -8,6 +8,13 @@ import path from "path";
 import { randomUUID } from "crypto";
 import fs from "fs";
 import express from "express";
+import session from "express-session";
+
+declare module "express-session" {
+  interface SessionData {
+    authenticated?: boolean;
+  }
+}
 
 
 const uploadsDir = path.join(process.cwd(), "uploads");
@@ -52,6 +59,7 @@ async function seedDefaults() {
     step2_text: "Крок 2: Вступ до клубу\n\nЗнайдіть клуб за ID та приєднайтесь.",
     bonus_text: "Крок 3: Бонус\n\nВітаємо! Ви можете отримати бонус за реєстрацію.",
     payment_amounts: "100, 200, 500, 1000, 2000, 5000",
+    admin_password: "admin123",
   };
 
   for (const [key, value] of Object.entries(defaults)) {
@@ -61,10 +69,41 @@ async function seedDefaults() {
   }
 }
 
+function requireAuth(req: Request, res: Response, next: NextFunction) {
+  const publicPaths = [
+    "/api/auth/login",
+    "/api/auth/status",
+    "/api/payments/webhook",
+    "/api/stats",
+  ];
+  if (publicPaths.some(p => req.path === p)) {
+    return next();
+  }
+  if (req.path.startsWith("/api/") && !req.session?.authenticated) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+  next();
+}
+
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
+
+  app.use(
+    session({
+      secret: process.env.SESSION_SECRET || "fallback-secret-change-me",
+      resave: false,
+      saveUninitialized: false,
+      cookie: {
+        secure: false,
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000,
+      },
+    })
+  );
+
+  app.use(requireAuth);
 
   app.use("/uploads", express.static(path.join(process.cwd(), "uploads"), {
     setHeaders: (res, filePath) => {
@@ -93,6 +132,32 @@ export async function registerRoutes(
   } catch (e) {
     console.error("Seed defaults error:", e);
   }
+
+  app.post("/api/auth/login", async (req, res) => {
+    const { password } = req.body;
+    if (!password) {
+      return res.status(400).json({ message: "Password required" });
+    }
+    const adminPassword = await storage.getConfig("admin_password");
+    if (password === adminPassword) {
+      req.session.authenticated = true;
+      return res.json({ success: true });
+    }
+    return res.status(401).json({ message: "Invalid password" });
+  });
+
+  app.get("/api/auth/status", (req, res) => {
+    res.json({ authenticated: !!req.session?.authenticated });
+  });
+
+  app.post("/api/auth/logout", (req, res) => {
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ message: "Logout failed" });
+      }
+      res.json({ success: true });
+    });
+  });
 
   app.post("/api/upload", upload.single("file"), async (req, res) => {
     if (!req.file) {

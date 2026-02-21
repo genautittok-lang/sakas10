@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Save, Settings, Upload, Link as LinkIcon, MessageSquare, Film, Smartphone, CreditCard, Cog, ChevronDown, CheckCircle, X } from "lucide-react";
+import { Save, Settings, Upload, Link as LinkIcon, MessageSquare, Film, Smartphone, CreditCard, Cog, ChevronDown, CheckCircle, X, Shield } from "lucide-react";
 import type { BotConfig } from "@shared/schema";
 
 interface ConfigField {
@@ -39,6 +39,7 @@ const CONFIG_FIELDS: ConfigField[] = [
   { key: "convert2pay_merchant_id", label: "Convert2pay Merchant ID", description: "Ідентифікатор мерчанта Convert2pay", type: "text", placeholder: "merchant_123" },
   { key: "convert2pay_secret_key", label: "Convert2pay Secret Key", description: "Секретний ключ API Convert2pay", type: "text", placeholder: "sk_live_..." },
   { key: "convert2pay_currency", label: "Convert2pay валюта", description: "Код валюти (за замовчуванням UAH)", type: "text", placeholder: "UAH" },
+  { key: "admin_password", label: "Пароль адміністратора", description: "Пароль для входу в адмін панель", type: "text", placeholder: "Введіть новий пароль" },
 ];
 
 const SECTIONS = [
@@ -71,6 +72,12 @@ const SECTIONS = [
     description: "Налаштування платіжної системи Convert2pay",
     icon: CreditCard,
     keys: ["payment_amounts", "convert2pay_api_url", "convert2pay_merchant_id", "convert2pay_secret_key", "convert2pay_currency"],
+  },
+  {
+    title: "Безпека",
+    description: "Налаштування доступу до адмін панелі",
+    icon: Shield,
+    keys: ["admin_password"],
   },
 ];
 
