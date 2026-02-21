@@ -237,8 +237,8 @@ async function showPlatformVideo(chatId: number, platform: "android" | "ios" | "
         const fileOpts = getFileOptions(videoUrl);
         await bot!.sendVideo(chatId, source, {
           caption: "\u{1F4F1} \u0406\u043D\u0441\u0442\u0440\u0443\u043A\u0446\u0456\u044F \u0437 \u0432\u0441\u0442\u0430\u043D\u043E\u0432\u043B\u0435\u043D\u043D\u044F",
-          supports_streaming: true,
           ...buttons,
+          ...(({ supports_streaming: true }) as any),
         }, { ...fileOpts });
       } catch (e) {
         log(`Failed to send ${platform} video: ${e}`, "bot");
@@ -265,7 +265,7 @@ async function showStep2(chatId: number) {
     if (source) {
       try {
         const fileOpts = getFileOptions(videoUrl);
-        await bot!.sendVideo(chatId, source, { caption: text, supports_streaming: true }, { ...fileOpts });
+        await bot!.sendVideo(chatId, source, { caption: text, ...(({ supports_streaming: true }) as any) }, { ...fileOpts });
       } catch (e) {
         log(`Failed to send step2 video: ${e}`, "bot");
         await bot!.sendMessage(chatId, text);
