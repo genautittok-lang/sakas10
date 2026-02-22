@@ -52,7 +52,8 @@ Users go through: HOME (welcome + social links + platform selection) -> STEP_2 (
 
 ## Bot Configuration (via Admin Panel)
 ### Settings page:
-- `manager_chat_id` - Telegram chat ID of manager
+- Moderators section: up to 3 Telegram moderator chat IDs (stored comma-separated in `manager_chat_id`)
+- All moderators receive notifications (messages, payments) and have access to Telegram admin commands
 - `club_id` - Club ID shown in step 2
 - `rules_text` - Rules text shown when user clicks "Правила"
 - `rules_link` - URL for "Правила бота" button

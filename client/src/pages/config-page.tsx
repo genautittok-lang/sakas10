@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Save, Settings, Link as LinkIcon, Smartphone, CreditCard, Cog, ChevronDown, CheckCircle, Shield, Trash2, UserPlus, Key } from "lucide-react";
+import { Save, Settings, Link as LinkIcon, Smartphone, CreditCard, Cog, ChevronDown, CheckCircle, Shield, Trash2, UserPlus, Key, Users } from "lucide-react";
 import type { BotConfig } from "@shared/schema";
 
 interface ConfigField {
@@ -20,7 +20,6 @@ interface ConfigField {
 }
 
 const CONFIG_FIELDS: ConfigField[] = [
-  { key: "manager_chat_id", label: "Chat ID менеджера", description: "Числовий Chat ID (не юзернейм!). Надішліть /start боту @userinfobot щоб дізнатися свій ID", type: "text", placeholder: "123456789" },
   { key: "club_id", label: "Club ID", description: "ID клубу для відображення на кроці 2", type: "text", placeholder: "CLUB123" },
   { key: "rules_text", label: "Правила", description: "Текст правил", type: "textarea", placeholder: "Правила:" },
   { key: "rules_link", label: "Посилання \u00AB\u041F\u0440\u0430\u0432\u0438\u043B\u0430 \u0431\u043E\u0442\u0430\u00BB", description: "URL \u0434\u043B\u044F \u043A\u043D\u043E\u043F\u043A\u0438 \u00AB\u041F\u0440\u0430\u0432\u0438\u043B\u0430 \u0431\u043E\u0442\u0430\u00BB (\u0432\u0456\u0434\u043A\u0440\u0438\u0432\u0430\u0454\u0442\u044C\u0441\u044F \u0443 \u0431\u0440\u0430\u0443\u0437\u0435\u0440\u0456)", type: "url", placeholder: "https://example.com/rules" },
@@ -44,7 +43,7 @@ const SECTIONS = [
     title: "Основні",
     description: "Головні ідентифікатори бота",
     icon: Cog,
-    keys: ["manager_chat_id", "club_id", "rules_text", "rules_link"],
+    keys: ["club_id", "rules_text", "rules_link"],
   },
   {
     title: "Соціальні мережі",
@@ -65,6 +64,94 @@ const SECTIONS = [
     keys: ["payment_amounts", "convert2pay_api_url", "convert2pay_merchant_id", "convert2pay_secret_key", "convert2pay_currency"],
   },
 ];
+
+function ModeratorSection({ configList }: { configList: BotConfig[] | undefined }) {
+  const { toast } = useToast();
+  const [moderators, setModerators] = useState<string[]>(["", "", ""]);
+  const [isOpen, setIsOpen] = useState(true);
+  const [isSaved, setIsSaved] = useState(false);
+
+  useEffect(() => {
+    if (configList) {
+      const entry = configList.find(c => c.key === "manager_chat_id");
+      const raw = entry?.value || "";
+      const parts = raw.split(",").map(s => s.trim());
+      setModerators([parts[0] || "", parts[1] || "", parts[2] || ""]);
+    }
+  }, [configList]);
+
+  const saveModerators = useMutation({
+    mutationFn: async () => {
+      const value = moderators.filter(m => m.trim()).join(",");
+      await apiRequest("POST", "/api/config", { key: "manager_chat_id", value });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/config"] });
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 2000);
+      toast({ title: "Збережено" });
+    },
+    onError: () => {
+      toast({ title: "Помилка збереження", variant: "destructive" });
+    },
+  });
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <div className="space-y-3">
+        <CollapsibleTrigger className="w-full" data-testid="button-toggle-section-moderators">
+          <div className="flex items-center justify-between gap-4 hover-elevate rounded-md p-2 -ml-2">
+            <div className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-muted-foreground" />
+              <div className="text-left">
+                <h2 className="text-lg font-semibold" data-testid="text-section-moderators">Модератори</h2>
+                <p className="text-sm text-muted-foreground">Telegram Chat ID модераторів бота (до 3)</p>
+              </div>
+            </div>
+            <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+          </div>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <Card>
+            <CardContent className="p-4 space-y-4">
+              <p className="text-xs text-muted-foreground">Числовий Chat ID (не юзернейм!). Надішліть /start боту @userinfobot щоб дізнатися свій ID</p>
+              <div className="space-y-3">
+                {[0, 1, 2].map(i => (
+                  <div key={i} className="space-y-1">
+                    <Label className="text-sm font-medium">Модератор {i + 1}</Label>
+                    <Input
+                      value={moderators[i]}
+                      onChange={(e) => {
+                        const updated = [...moderators];
+                        updated[i] = e.target.value;
+                        setModerators(updated);
+                      }}
+                      placeholder="123456789"
+                      data-testid={`input-moderator-${i + 1}`}
+                    />
+                  </div>
+                ))}
+              </div>
+              <Button
+                size="sm"
+                onClick={() => saveModerators.mutate()}
+                disabled={saveModerators.isPending}
+                data-testid="button-save-moderators"
+              >
+                {isSaved ? (
+                  <CheckCircle className="h-3 w-3 mr-1 text-emerald-500" />
+                ) : (
+                  <Save className="h-3 w-3 mr-1" />
+                )}
+                {isSaved ? "Збережено" : "Зберегти"}
+              </Button>
+            </CardContent>
+          </Card>
+        </CollapsibleContent>
+      </div>
+    </Collapsible>
+  );
+}
 
 interface AdminUser {
   id: string;
@@ -318,6 +405,8 @@ export default function ConfigPage() {
       </div>
 
       <div className="space-y-6">
+        <ModeratorSection configList={configList} />
+
         {SECTIONS.map((section) => (
           <Collapsible
             key={section.title}

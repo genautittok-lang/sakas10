@@ -39,6 +39,17 @@ const managerReplyState: Map<string, string> = new Map();
 const broadcastState: Map<string, boolean> = new Map();
 const userManagerState: Map<string, boolean> = new Map();
 
+async function getModeratorChatIds(): Promise<string[]> {
+  const raw = await getConfigValue("manager_chat_id", "");
+  if (!raw) return [];
+  return raw.split(",").map(s => s.trim()).filter(s => s.length > 0);
+}
+
+async function isModeratorChatId(chatId: string | number): Promise<boolean> {
+  const ids = await getModeratorChatIds();
+  return ids.includes(String(chatId));
+}
+
 function translateStep(step: string): string {
   const translations: Record<string, string> = {
     HOME: "Головна",
@@ -69,8 +80,8 @@ async function sendManagerNotification(tgId: string, username: string | null, st
   });
 
   if (!bot) return;
-  const managerChatId = await getConfigValue("manager_chat_id", "");
-  if (!managerChatId) {
+  const moderatorIds = await getModeratorChatIds();
+  if (moderatorIds.length === 0) {
     log("Manager chat ID not configured, message saved to web panel only", "bot");
     return;
   }
@@ -82,20 +93,22 @@ async function sendManagerNotification(tgId: string, username: string | null, st
     `\u{1F4CD} Крок: ${step}\n` +
     `\u{1F4AC} Причина: ${reason}`;
 
-  try {
-    await bot.sendMessage(managerChatId, text, {
-      reply_markup: {
-        inline_keyboard: [
-          [{ text: "\u270F\uFE0F \u0412\u0456\u0434\u043F\u043E\u0432\u0456\u0441\u0442\u0438", callback_data: `reply_to_${msg.id}_${tgId}` }],
-        ],
-      },
-    });
-  } catch (err) {
-    const errMsg = String(err);
-    if (errMsg.includes("chat not found")) {
-      log(`Manager chat ID "${managerChatId}" not found. Make sure to use a numeric Chat ID (not username). You can get it by messaging @userinfobot on Telegram.`, "bot");
-    } else {
-      log(`Failed to send manager notification: ${err}`, "bot");
+  for (const modId of moderatorIds) {
+    try {
+      await bot.sendMessage(modId, text, {
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: "\u270F\uFE0F \u0412\u0456\u0434\u043F\u043E\u0432\u0456\u0441\u0442\u0438", callback_data: `reply_to_${msg.id}_${tgId}` }],
+          ],
+        },
+      });
+    } catch (err) {
+      const errMsg = String(err);
+      if (errMsg.includes("chat not found")) {
+        log(`Manager chat ID "${modId}" not found. Make sure to use a numeric Chat ID (not username). You can get it by messaging @userinfobot on Telegram.`, "bot");
+      } else {
+        log(`Failed to send manager notification to ${modId}: ${err}`, "bot");
+      }
     }
   }
 }
@@ -512,8 +525,7 @@ export function startBot() {
 
   bot.onText(/\/admin/, async (msg) => {
     const chatId = msg.chat.id;
-    const managerChatId = await getConfigValue("manager_chat_id", "");
-    if (!managerChatId || String(chatId) !== managerChatId) return;
+    if (!(await isModeratorChatId(chatId))) return;
 
     await bot!.sendMessage(chatId, "\u{1F6E0}\uFE0F \u0410\u0434\u043C\u0456\u043D-\u043F\u0430\u043D\u0435\u043B\u044C\n\n\u041E\u0431\u0435\u0440\u0456\u0442\u044C \u0434\u0456\u044E:", {
       reply_markup: {
@@ -529,8 +541,7 @@ export function startBot() {
 
   bot.onText(/\/stats/, async (msg) => {
     const chatId = msg.chat.id;
-    const managerChatId = await getConfigValue("manager_chat_id", "");
-    if (!managerChatId || String(chatId) !== managerChatId) return;
+    if (!(await isModeratorChatId(chatId))) return;
 
     await showAdminStats(chatId);
   });
@@ -568,9 +579,8 @@ export function startBot() {
       const parts = data.replace("reply_to_", "").split("_");
       const targetTgId = parts.pop()!;
       const messageId = parts.join("_");
-      const managerChatId = await getConfigValue("manager_chat_id", "");
-      if (String(chatId) === managerChatId) {
-        managerReplyState.set(managerChatId, `${messageId}:${targetTgId}`);
+      if (await isModeratorChatId(chatId)) {
+        managerReplyState.set(String(chatId), `${messageId}:${targetTgId}`);
         await bot!.sendMessage(chatId, `\u270F\uFE0F \u041D\u0430\u043F\u0438\u0448\u0456\u0442\u044C \u0432\u0456\u0434\u043F\u043E\u0432\u0456\u0434\u044C \u043A\u043E\u0440\u0438\u0441\u0442\u0443\u0432\u0430\u0447\u0443 (ID: ${targetTgId}):\n\n\u0412\u0456\u0434\u043F\u0440\u0430\u0432\u0442\u0435 \u0442\u0435\u043A\u0441\u0442\u043E\u0432\u0435 \u043F\u043E\u0432\u0456\u0434\u043E\u043C\u043B\u0435\u043D\u043D\u044F \u0456 \u044F \u043F\u0435\u0440\u0435\u0448\u043B\u044E \u0439\u043E\u0433\u043E.`, {
           reply_markup: {
             inline_keyboard: [
@@ -583,18 +593,16 @@ export function startBot() {
     }
 
     if (data === "cancel_reply") {
-      const managerChatId = await getConfigValue("manager_chat_id", "");
-      if (String(chatId) === managerChatId) {
-        managerReplyState.delete(managerChatId);
-        broadcastState.delete(managerChatId);
+      if (await isModeratorChatId(chatId)) {
+        managerReplyState.delete(String(chatId));
+        broadcastState.delete(String(chatId));
         await bot!.sendMessage(chatId, "\u274C \u0412\u0456\u0434\u043F\u043E\u0432\u0456\u0434\u044C \u0441\u043A\u0430\u0441\u043E\u0432\u0430\u043D\u043E.");
       }
       return;
     }
 
     if (data === "admin_menu") {
-      const managerChatId = await getConfigValue("manager_chat_id", "");
-      if (String(chatId) === managerChatId) {
+      if (await isModeratorChatId(chatId)) {
         await bot!.sendMessage(chatId, "\u{1F6E0}\uFE0F \u0410\u0434\u043C\u0456\u043D-\u043F\u0430\u043D\u0435\u043B\u044C\n\n\u041E\u0431\u0435\u0440\u0456\u0442\u044C \u0434\u0456\u044E:", {
           reply_markup: {
             inline_keyboard: [
@@ -610,33 +618,29 @@ export function startBot() {
     }
 
     if (data === "admin_stats") {
-      const managerChatId = await getConfigValue("manager_chat_id", "");
-      if (String(chatId) === managerChatId) {
+      if (await isModeratorChatId(chatId)) {
         await showAdminStats(chatId);
       }
       return;
     }
 
     if (data === "admin_users") {
-      const managerChatId = await getConfigValue("manager_chat_id", "");
-      if (String(chatId) === managerChatId) {
+      if (await isModeratorChatId(chatId)) {
         await showAdminUsers(chatId);
       }
       return;
     }
 
     if (data === "admin_payments") {
-      const managerChatId = await getConfigValue("manager_chat_id", "");
-      if (String(chatId) === managerChatId) {
+      if (await isModeratorChatId(chatId)) {
         await showAdminPayments(chatId);
       }
       return;
     }
 
     if (data === "admin_broadcast") {
-      const managerChatId = await getConfigValue("manager_chat_id", "");
-      if (String(chatId) === managerChatId) {
-        broadcastState.set(managerChatId, true);
+      if (await isModeratorChatId(chatId)) {
+        broadcastState.set(String(chatId), true);
         await bot!.sendMessage(chatId, "\u{1F4E2} \u0420\u043E\u0437\u0441\u0438\u043B\u043A\u0430\n\n\u041D\u0430\u043F\u0438\u0448\u0456\u0442\u044C \u043F\u043E\u0432\u0456\u0434\u043E\u043C\u043B\u0435\u043D\u043D\u044F, \u044F\u043A\u0435 \u0431\u0443\u0434\u0435 \u043D\u0430\u0434\u0456\u0441\u043B\u0430\u043D\u043E \u0432\u0441\u0456\u043C \u043A\u043E\u0440\u0438\u0441\u0442\u0443\u0432\u0430\u0447\u0430\u043C:", {
           reply_markup: {
             inline_keyboard: [
@@ -649,8 +653,7 @@ export function startBot() {
     }
 
     if (data.startsWith("admin_confirm_")) {
-      const managerChatId = await getConfigValue("manager_chat_id", "");
-      if (String(chatId) !== managerChatId) return;
+      if (!(await isModeratorChatId(chatId))) return;
 
       const paymentId = data.replace("admin_confirm_", "");
       const payment = await storage.getPayment(paymentId);
@@ -803,12 +806,12 @@ export function startBot() {
     const chatId = msg.chat.id;
     const tgId = String(msg.from.id);
 
-    const managerChatId = await getConfigValue("manager_chat_id", "");
-    if (managerChatId && String(chatId) === managerChatId) {
-      const replyInfo = managerReplyState.get(managerChatId);
+    if (await isModeratorChatId(chatId)) {
+      const moderatorKey = String(chatId);
+      const replyInfo = managerReplyState.get(moderatorKey);
       if (replyInfo && msg.text) {
         const [messageId, targetTgId] = replyInfo.split(":");
-        managerReplyState.delete(managerChatId);
+        managerReplyState.delete(moderatorKey);
 
         await sendMessageToUser(targetTgId, `\u{1F4AC} \u0412\u0456\u0434\u043F\u043E\u0432\u0456\u0434\u044C \u043C\u0435\u043D\u0435\u0434\u0436\u0435\u0440\u0430:\n\n${msg.text}`);
 
@@ -824,8 +827,8 @@ export function startBot() {
         return;
       }
 
-      if (broadcastState.get(managerChatId) && (msg.text || msg.photo)) {
-        broadcastState.delete(managerChatId);
+      if (broadcastState.get(moderatorKey) && (msg.text || msg.photo)) {
+        broadcastState.delete(moderatorKey);
         const allUsers = await storage.getAllBotUsers();
         let sent = 0;
         let failed = 0;
@@ -955,8 +958,8 @@ export function getBot() {
 
 export async function notifyManagerPayment(tgId: string, username: string | null, amount: number, playerId: string) {
   if (!bot) return;
-  const managerChatId = await storage.getConfig("manager_chat_id");
-  if (!managerChatId) return;
+  const moderatorIds = await getModeratorChatIds();
+  if (moderatorIds.length === 0) return;
 
   const text =
     `\u2705 \u041E\u043F\u043B\u0430\u0442\u0430 \u043F\u0456\u0434\u0442\u0432\u0435\u0440\u0434\u0436\u0435\u043D\u0430!\n\n` +
@@ -965,10 +968,12 @@ export async function notifyManagerPayment(tgId: string, username: string | null
     `\u{1F4B0} \u0421\u0443\u043C\u0430: ${amount} \u20B4\n` +
     `\u{1F3AE} Player ID: ${playerId}`;
 
-  try {
-    await bot.sendMessage(managerChatId, text);
-  } catch (err) {
-    log(`Failed to send payment notification: ${err}`, "bot");
+  for (const modId of moderatorIds) {
+    try {
+      await bot.sendMessage(modId, text);
+    } catch (err) {
+      log(`Failed to send payment notification to ${modId}: ${err}`, "bot");
+    }
   }
 }
 
