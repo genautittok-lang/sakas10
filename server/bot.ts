@@ -213,10 +213,6 @@ async function showHome(chatId: number, tgId: string) {
     { text: "\u{1F34E} iOS", callback_data: "show_ios" },
     { text: "\u{1F5A5} Windows", callback_data: "show_windows" },
   ]);
-  const rulesLink = await getConfigValue("rules_link", "");
-  if (rulesLink) {
-    inlineKeyboard.push([{ text: "\u{1F4CB} \u041F\u0440\u0430\u0432\u0438\u043B\u0430", url: rulesLink }]);
-  }
 
   const buttons = {
     reply_markup: { inline_keyboard: inlineKeyboard },
@@ -331,12 +327,20 @@ async function showStep3(chatId: number) {
   const bonusText = await getConfigValue("bonus_text",
     "\u{1F381} \u0411\u043E\u043D\u0443\u0441\n\n\u{1F48E} \u041F\u041E\u0414\u0412\u041E\u042E\u0419 \u041F\u0415\u0420\u0428\u0418\u0419 \u0414\u0415\u041F\u041E\u0417\u0418\u0422!\n\n\u041F\u043E\u043F\u043E\u0432\u043D\u0456\u0442\u044C \u0440\u0430\u0445\u0443\u043D\u043E\u043A \u0442\u0430 \u043E\u0442\u0440\u0438\u043C\u0430\u0439\u0442\u0435 \u0431\u043E\u043D\u0443\u0441 \u043D\u0430 \u043F\u0435\u0440\u0448\u0438\u0439 \u0434\u0435\u043F\u043E\u0437\u0438\u0442.\n\u041C\u0456\u043D\u0456\u043C\u0430\u043B\u044C\u043D\u0435 \u043F\u043E\u043F\u043E\u0432\u043D\u0435\u043D\u043D\u044F \u0432\u0456\u0434 \u20B4 500.");
 
+  const rulesLink = await getConfigValue("rules_link", "");
+  const step3Keyboard: any[][] = [
+    [{ text: "\u{1F4B0} \u041F\u043E\u043F\u043E\u0432\u043D\u0438\u0442\u0438 \u0442\u0430 \u043E\u0442\u0440\u0438\u043C\u0430\u0442\u0438 \u0431\u043E\u043D\u0443\u0441", callback_data: "go_payment" }],
+  ];
+  const bottomRow: any[] = [];
+  if (rulesLink) {
+    bottomRow.push({ text: "\u{1F4CB} \u041F\u0440\u0430\u0432\u0438\u043B\u0430", url: rulesLink });
+  }
+  bottomRow.push({ text: "\u{1F3E0} \u0413\u043E\u043B\u043E\u0432\u043D\u0430", callback_data: "go_home" });
+  step3Keyboard.push(bottomRow);
+
   await bot!.sendMessage(chatId, bonusText, {
     reply_markup: {
-      inline_keyboard: [
-        [{ text: "\u{1F4B0} \u041F\u043E\u043F\u043E\u0432\u043D\u0438\u0442\u0438 \u0442\u0430 \u043E\u0442\u0440\u0438\u043C\u0430\u0442\u0438 \u0431\u043E\u043D\u0443\u0441", callback_data: "go_payment" }],
-        [{ text: "\u{1F4CB} \u041F\u0440\u0430\u0432\u0438\u043B\u0430", callback_data: "rules" }, { text: "\u{1F3E0} \u0413\u043E\u043B\u043E\u0432\u043D\u0430", callback_data: "go_home" }],
-      ],
+      inline_keyboard: step3Keyboard,
     },
   });
 }
