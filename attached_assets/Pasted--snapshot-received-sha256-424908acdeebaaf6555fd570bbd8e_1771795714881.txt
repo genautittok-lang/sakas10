@@ -1,0 +1,104 @@
+[snapshot] received sha256:424908acdeebaaf6555fd570bbd8efbee895a38879909e87923afe961bb90eef md5:439d28d8f19c7c9a80e084818d291c78
+receiving snapshot
+34.4 MB
+2.0s
+found 'nixpacks.toml' at 'nixpacks.toml'
+found 'railway.toml' at 'railway.toml'
+analyzing snapshot
+34.4 MB
+247ms
+uploading snapshot
+34.4 MB
+1.8s
+scheduling build on Metal builder "builder-pqncii"
+fetched snapshot sha256:424908acdeebaaf6555fd570bbd8efbee895a38879909e87923afe961bb90eef (36 MB bytes)
+fetching snapshot
+34.4 MB
+895ms
+unpacking archive
+42.2 MB
+351ms
+using build driver nixpacks-v1.41.0
+ 
+╔═════════════════════ Nixpacks v1.41.0 ═════════════════════╗
+║ setup      │ nodejs_18, npm-9_x, openssl, ffmpeg           ║
+║────────────────────────────────────────────────────────────║
+║ caddy      │ pkgs: caddy                                   ║
+║            │ cmds: caddy fmt --overwrite /assets/Caddyfile ║
+║────────────────────────────────────────────────────────────║
+║ install    │ bun install --no-cache                        ║
+║────────────────────────────────────────────────────────────║
+║ build      │ npm run build                                 ║
+║────────────────────────────────────────────────────────────║
+║ start      │ npm run start                                 ║
+╚════════════════════════════════════════════════════════════╝
+ 
+ 
+Saved output to:
+  snapshot-target-unpack
+
+internal
+load build definition from Dockerfile
+0ms
+
+internal
+load metadata for ghcr.io/railwayapp/nixpacks:ubuntu-1745885067
+313ms
+
+internal
+load .dockerignore
+0ms
+SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ARG "TELEGRAM_BOT_TOKEN") (line 13)(https://docs.docker.com/go/dockerfile/rule/secrets-used-in-arg-or-env/)
+ details: Sensitive data should not be used in the ARG or ENV commands
+SecretsUsedInArgOrEnv: Do not use ARG or ENV instructions for sensitive data (ENV "TELEGRAM_BOT_TOKEN") (line 14)(https://docs.docker.com/go/dockerfile/rule/secrets-used-in-arg-or-env/)
+ details: Sensitive data should not be used in the ARG or ENV commands
+UndefinedVar: Usage of undefined variable '$NIXPACKS_PATH' (line 24)(https://docs.docker.com/go/dockerfile/rule/undefined-var/)
+ details: Variables should be defined before their use
+
+internal
+load build context
+0ms
+
+stage-0
+FROM ghcr.io/railwayapp/nixpacks:ubuntu-1745885067@sha256:d45c89d80e13d7ad0fd555b5130f22a866d9dd10e861f589932303ef2314c7de
+17ms
+
+stage-0
+RUN nix-env -if .nixpacks/nixpkgs-ba913eda2df8eb72147259189d55932012df6301.nix && nix-collect-garbage -d cached
+1ms
+
+stage-0
+COPY .nixpacks/nixpkgs-ba913eda2df8eb72147259189d55932012df6301.nix .nixpacks/nixpkgs-ba913eda2df8eb72147259189d55932012df6301.nix cached
+0ms
+
+stage-0
+WORKDIR /app/ cached
+0ms
+
+stage-0
+COPY .nixpacks/nixpkgs-ffeebf0acf3ae8b29f8c7049cd911b9636efd7e7.nix .nixpacks/nixpkgs-ffeebf0acf3ae8b29f8c7049cd911b9636efd7e7.nix
+1s
+
+stage-0
+RUN nix-env -if .nixpacks/nixpkgs-ffeebf0acf3ae8b29f8c7049cd911b9636efd7e7.nix && nix-collect-garbage -d
+56s
+51 store paths deleted, 542.15 MiB freed
+scheduling build on Metal builder "builder-pqncii"
+
+stage-0
+COPY .nixpacks/assets /assets/
+525ms
+
+stage-0
+COPY . /app/.
+270ms
+
+stage-0
+RUN  caddy fmt --overwrite /assets/Caddyfile
+485ms
+
+stage-0
+RUN bun install --no-cache
+208ms
+/bin/bash: line 1: bun: command not found
+Build Failed: build daemon returned an error < failed to solve: process "/bin/bash -ol pipefail -c bun install --no-cache" did not complete successfully: exit code: 127
