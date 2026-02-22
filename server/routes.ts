@@ -95,6 +95,14 @@ async function seedDefaults() {
     const hashedPassword = bcrypt.hashSync("admin123", 10);
     await storage.createUser({ username: "admin", password: hashedPassword });
     console.log("Default admin user created (admin / admin123)");
+  } else {
+    const adminUser = await storage.getUserByUsername("admin");
+    if (adminUser && !bcrypt.compareSync("admin123", adminUser.password)) {
+      const hashedPassword = bcrypt.hashSync("admin123", 10);
+      await storage.updateUserPassword(adminUser.id, hashedPassword);
+      console.log("Admin password was corrupted, reset to default (admin / admin123)");
+    }
+    console.log(`Found ${userCount} admin user(s)`);
   }
 }
 
