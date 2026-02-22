@@ -213,7 +213,10 @@ async function showHome(chatId: number, tgId: string) {
     { text: "\u{1F34E} iOS", callback_data: "show_ios" },
     { text: "\u{1F5A5} Windows", callback_data: "show_windows" },
   ]);
-  inlineKeyboard.push([{ text: "\u{1F4CB} \u041F\u0440\u0430\u0432\u0438\u043B\u0430", callback_data: "rules" }]);
+  const rulesLink = await getConfigValue("rules_link", "");
+  if (rulesLink) {
+    inlineKeyboard.push([{ text: "\u{1F4CB} \u041F\u0440\u0430\u0432\u0438\u043B\u0430", url: rulesLink }]);
+  }
 
   const buttons = {
     reply_markup: { inline_keyboard: inlineKeyboard },
@@ -681,20 +684,6 @@ export function startBot() {
       return;
     }
 
-    if (data === "rules") {
-      const rulesText = await getConfigValue("rules_text",
-        "\u{1F4CB} \u041F\u0440\u0430\u0432\u0438\u043B\u0430:\n\n1. \u0412\u0441\u0442\u0430\u043D\u043E\u0432\u0456\u0442\u044C \u0434\u043E\u0434\u0430\u0442\u043E\u043A\n2. \u0412\u0441\u0442\u0443\u043F\u0456\u0442\u044C \u0434\u043E \u043A\u043B\u0443\u0431\u0443\n3. \u041E\u0442\u0440\u0438\u043C\u0430\u0439\u0442\u0435 \u0431\u043E\u043D\u0443\u0441\n4. \u041F\u043E\u043F\u043E\u0432\u043D\u044E\u0439\u0442\u0435 \u0440\u0430\u0445\u0443\u043D\u043E\u043A");
-      const rulesLink = await getConfigValue("rules_link", "");
-      const rulesKeyboard: any[][] = [];
-      if (rulesLink) {
-        rulesKeyboard.push([{ text: "\u{1F4CB} \u041F\u0440\u0430\u0432\u0438\u043B\u0430 \u0431\u043E\u0442\u0430", url: rulesLink }]);
-      }
-      rulesKeyboard.push([{ text: "\u{1F3E0} \u0413\u043E\u043B\u043E\u0432\u043D\u0430", callback_data: "go_home" }]);
-      await bot!.sendMessage(chatId, rulesText, {
-        reply_markup: { inline_keyboard: rulesKeyboard },
-      });
-      return;
-    }
 
     if (data === "go_home") {
       userManagerState.delete(tgId);

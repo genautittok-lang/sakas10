@@ -21,8 +21,7 @@ interface ConfigField {
 
 const CONFIG_FIELDS: ConfigField[] = [
   { key: "club_id", label: "Club ID", description: "ID клубу для відображення на кроці 2", type: "text", placeholder: "CLUB123" },
-  { key: "rules_text", label: "Правила", description: "Текст правил", type: "textarea", placeholder: "Правила:" },
-  { key: "rules_link", label: "Посилання \u00AB\u041F\u0440\u0430\u0432\u0438\u043B\u0430 \u0431\u043E\u0442\u0430\u00BB", description: "URL \u0434\u043B\u044F \u043A\u043D\u043E\u043F\u043A\u0438 \u00AB\u041F\u0440\u0430\u0432\u0438\u043B\u0430 \u0431\u043E\u0442\u0430\u00BB (\u0432\u0456\u0434\u043A\u0440\u0438\u0432\u0430\u0454\u0442\u044C\u0441\u044F \u0443 \u0431\u0440\u0430\u0443\u0437\u0435\u0440\u0456)", type: "url", placeholder: "https://example.com/rules" },
+  { key: "rules_link", label: "Посилання \u00AB\u041F\u0440\u0430\u0432\u0438\u043B\u0430\u00BB", description: "URL кнопки \u00AB\u041F\u0440\u0430\u0432\u0438\u043B\u0430\u00BB (відкривається у браузері)", type: "url", placeholder: "https://example.com/rules" },
   { key: "club_join_link", label: "\u041F\u043E\u0441\u0438\u043B\u0430\u043D\u043D\u044F \u00AB\u0412\u0441\u0442\u0443\u043F\u0438\u0442\u0438 \u0432 \u043A\u043B\u0443\u0431\u00BB", description: "URL \u043A\u043D\u043E\u043F\u043A\u0438 \u00AB\u0412\u0441\u0442\u0443\u043F\u0438\u0442\u0438 \u0432 \u043A\u043B\u0443\u0431\u00BB \u0432 \u0433\u043E\u043B\u043E\u0432\u043D\u043E\u043C\u0443 \u043C\u0435\u043D\u044E", type: "url", placeholder: "https://example.com/club" },
   { key: "android_link", label: "Посилання Android", description: "URL для завантаження на Android", type: "url", placeholder: "https://play.google.com/..." },
   { key: "ios_link", label: "Посилання iOS", description: "URL для завантаження на iOS", type: "url", placeholder: "https://apps.apple.com/..." },
@@ -39,7 +38,7 @@ const SECTIONS = [
     title: "Основні",
     description: "Головні ідентифікатори бота",
     icon: Cog,
-    keys: ["club_id", "rules_text", "rules_link"],
+    keys: ["club_id", "rules_link"],
   },
   {
     title: "Посилання на додаток",
