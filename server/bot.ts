@@ -185,10 +185,10 @@ async function showHome(chatId: number, tgId: string) {
   const websiteLink = await getConfigValue("website_link", "");
 
   const socialLines: string[] = [];
-  if (telegramGroupLink) socialLines.push(`\u{1F465} \u0413\u0440\u0443\u043F\u0430 \u0433\u0440\u0430\u0432\u0446\u0456\u0432 \u043A\u043B\u0443\u0431\u0443 ${telegramGroupLink}`);
-  if (telegramChannelLink) socialLines.push(`\u{1F4E2} \u041A\u0430\u043D\u0430\u043B ${telegramChannelLink}`);
-  if (instagramLink) socialLines.push(`\u{1F4F8} Instagram ${instagramLink}`);
-  if (websiteLink) socialLines.push(`\u{1F310} ${websiteLink}`);
+  if (telegramGroupLink) socialLines.push(`<a href="${telegramGroupLink}">\u{1F465} \u0413\u0440\u0443\u043F\u0430 \u0433\u0440\u0430\u0432\u0446\u0456\u0432 \u043A\u043B\u0443\u0431\u0443</a>`);
+  if (telegramChannelLink) socialLines.push(`<a href="${telegramChannelLink}">\u{1F4E2} \u041A\u0430\u043D\u0430\u043B</a>`);
+  if (instagramLink) socialLines.push(`<a href="${instagramLink}">\u{1F4F8} Instagram</a>`);
+  if (websiteLink) socialLines.push(`<a href="${websiteLink}">\u{1F310} \u0421\u0430\u0439\u0442</a>`);
 
   let fullWelcomeText = welcomeText;
   if (socialLines.length > 0) {
@@ -196,6 +196,7 @@ async function showHome(chatId: number, tgId: string) {
   }
 
   await bot!.sendMessage(chatId, fullWelcomeText, {
+    parse_mode: "HTML",
     reply_markup: {
       keyboard: [[{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7" }]],
       resize_keyboard: true,
