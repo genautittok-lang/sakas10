@@ -90,16 +90,11 @@ async function seedDefaults() {
     }
   }
 
-  const userCount = await storage.countUsers();
   const adminUser = await storage.getUserByUsername("admin");
   if (!adminUser) {
     const hashedPassword = bcrypt.hashSync("admin123", 10);
     await storage.createUser({ username: "admin", password: hashedPassword });
     console.log("Default admin user created (admin / admin123)");
-  } else {
-    const hashedPassword = bcrypt.hashSync("admin123", 10);
-    await storage.updateUserPassword(adminUser.id, hashedPassword);
-    console.log("Admin password reset to default (admin / admin123)");
   }
   console.log(`Total admin user(s): ${await storage.countUsers()}`);
 }
@@ -174,7 +169,6 @@ export async function registerRoutes(
       return res.status(400).json({ message: "Username and password required" });
     }
     const user = await storage.getUserByUsername(username);
-    console.log(`Login attempt: username="${username}", userFound=${!!user}, passwordMatch=${user ? bcrypt.compareSync(password, user.password) : false}`);
     if (!user || !bcrypt.compareSync(password, user.password)) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
