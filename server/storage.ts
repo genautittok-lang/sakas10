@@ -1,12 +1,13 @@
 import { eq, desc, and, count } from "drizzle-orm";
 import { db } from "./db";
 import {
-  botUsers, payments, botConfig, managerMessages, messageReplies,
+  botUsers, payments, botConfig, managerMessages, messageReplies, users,
   type BotUser, type InsertBotUser,
   type Payment, type InsertPayment,
   type BotConfig, type InsertBotConfig,
   type ManagerMessage, type InsertManagerMessage,
   type MessageReply, type InsertMessageReply,
+  type User, type InsertUser,
 } from "@shared/schema";
 
 export interface IStorage {
@@ -35,6 +36,13 @@ export interface IStorage {
   getManagerMessage(id: string): Promise<ManagerMessage | undefined>;
   createMessageReply(reply: InsertMessageReply): Promise<MessageReply>;
   getMessageReplies(messageId: string): Promise<MessageReply[]>;
+
+  getAllUsers(): Promise<User[]>;
+  getUserByUsername(username: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+  deleteUser(id: string): Promise<void>;
+  updateUserPassword(id: string, password: string): Promise<void>;
+  countUsers(): Promise<number>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -143,6 +151,33 @@ export class DatabaseStorage implements IStorage {
 
   async getMessageReplies(messageId: string): Promise<MessageReply[]> {
     return db.select().from(messageReplies).where(eq(messageReplies.messageId, messageId)).orderBy(desc(messageReplies.createdAt));
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    return db.select().from(users);
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+
+  async createUser(user: InsertUser): Promise<User> {
+    const [created] = await db.insert(users).values(user).returning();
+    return created;
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    await db.delete(users).where(eq(users.id, id));
+  }
+
+  async updateUserPassword(id: string, password: string): Promise<void> {
+    await db.update(users).set({ password }).where(eq(users.id, id));
+  }
+
+  async countUsers(): Promise<number> {
+    const [result] = await db.select({ count: count() }).from(users);
+    return result?.count || 0;
   }
 }
 

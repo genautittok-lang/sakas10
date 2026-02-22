@@ -1,7 +1,7 @@
 import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { startBot, notifyManagerPayment, sendMessageToUser } from "./bot";
+import { startBot, notifyManagerPayment, sendMessageToUser, sendBroadcastMessage } from "./bot";
 import { initDatabase } from "./db-init";
 import multer from "multer";
 import path from "path";
@@ -9,10 +9,13 @@ import { randomUUID } from "crypto";
 import fs from "fs";
 import express from "express";
 import session from "express-session";
+import bcrypt from "bcryptjs";
 
 declare module "express-session" {
   interface SessionData {
     authenticated?: boolean;
+    userId?: string;
+    username?: string;
   }
 }
 
@@ -59,13 +62,25 @@ async function seedDefaults() {
     step2_text: "Крок 2: Вступ до клубу\n\nЗнайдіть клуб за ID та приєднайтесь.",
     bonus_text: "Крок 3: Бонус\n\nВітаємо! Ви можете отримати бонус за реєстрацію.",
     payment_amounts: "100, 200, 500, 1000, 2000, 5000",
-    admin_password: "admin123",
+    club_join_link: "https://example.com/club",
+    rules_link: "",
+    telegram_channel_link: "",
+    telegram_group_link: "",
+    instagram_link: "",
+    website_link: "",
   };
 
   for (const [key, value] of Object.entries(defaults)) {
     if (!existingKeys.has(key)) {
       await storage.setConfig(key, value);
     }
+  }
+
+  const userCount = await storage.countUsers();
+  if (userCount === 0) {
+    const hashedPassword = bcrypt.hashSync("admin123", 10);
+    await storage.createUser({ username: "admin", password: hashedPassword });
+    console.log("Default admin user created (admin / admin123)");
   }
 }
 
@@ -134,16 +149,18 @@ export async function registerRoutes(
   }
 
   app.post("/api/auth/login", async (req, res) => {
-    const { password } = req.body;
-    if (!password) {
-      return res.status(400).json({ message: "Password required" });
+    const { username, password } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ message: "Username and password required" });
     }
-    const adminPassword = await storage.getConfig("admin_password");
-    if (password === adminPassword) {
-      req.session.authenticated = true;
-      return res.json({ success: true });
+    const user = await storage.getUserByUsername(username);
+    if (!user || !bcrypt.compareSync(password, user.password)) {
+      return res.status(401).json({ message: "Invalid credentials" });
     }
-    return res.status(401).json({ message: "Invalid password" });
+    req.session.authenticated = true;
+    req.session.userId = user.id;
+    req.session.username = user.username;
+    return res.json({ success: true, username: user.username });
   });
 
   app.get("/api/auth/status", (req, res) => {
@@ -157,6 +174,50 @@ export async function registerRoutes(
       }
       res.json({ success: true });
     });
+  });
+
+  app.get("/api/admins", async (_req, res) => {
+    const allUsers = await storage.getAllUsers();
+    const safe = allUsers.map(u => ({ id: u.id, username: u.username }));
+    res.json(safe);
+  });
+
+  app.post("/api/admins", async (req, res) => {
+    const { username, password } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ message: "Username and password required" });
+    }
+    const currentCount = await storage.countUsers();
+    if (currentCount >= 3) {
+      return res.status(400).json({ message: "Maximum 3 admins allowed" });
+    }
+    const existing = await storage.getUserByUsername(username);
+    if (existing) {
+      return res.status(400).json({ message: "Username already exists" });
+    }
+    const hashedPassword = bcrypt.hashSync(password, 10);
+    const user = await storage.createUser({ username, password: hashedPassword });
+    res.json({ id: user.id, username: user.username });
+  });
+
+  app.delete("/api/admins/:id", async (req, res) => {
+    const { id } = req.params;
+    const currentCount = await storage.countUsers();
+    if (currentCount <= 1) {
+      return res.status(400).json({ message: "Cannot delete last admin" });
+    }
+    await storage.deleteUser(id);
+    res.json({ success: true });
+  });
+
+  app.patch("/api/admins/:id/password", async (req, res) => {
+    const { password } = req.body;
+    if (!password) {
+      return res.status(400).json({ message: "Password required" });
+    }
+    const hashedPassword = bcrypt.hashSync(password, 10);
+    await storage.updateUserPassword(req.params.id, hashedPassword);
+    res.json({ success: true });
   });
 
   app.post("/api/upload", upload.single("file"), async (req, res) => {
@@ -414,6 +475,33 @@ export async function registerRoutes(
       console.log(`[pay] Error processing Convert2pay: ${err}`);
       return res.redirect(convert2payUrl);
     }
+  });
+
+  app.post("/api/broadcast", async (req, res) => {
+    const { text, photoUrl, buttons } = req.body;
+    if (!text || !text.trim()) {
+      return res.status(400).json({ message: "Text is required" });
+    }
+
+    const allUsers = await storage.getAllBotUsers();
+    let sent = 0;
+    let failed = 0;
+
+    for (const u of allUsers) {
+      try {
+        const chatId = parseInt(u.tgId);
+        if (photoUrl) {
+          await sendBroadcastMessage(chatId, text.trim(), photoUrl, buttons);
+        } else {
+          await sendBroadcastMessage(chatId, text.trim(), null, buttons);
+        }
+        sent++;
+      } catch (err) {
+        failed++;
+      }
+    }
+
+    res.json({ sent, failed, total: allUsers.length });
   });
 
   app.get("/api/stats", async (_req, res) => {

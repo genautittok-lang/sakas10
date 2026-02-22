@@ -1,5 +1,5 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,29 +8,27 @@ import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Save, Settings, Upload, Link as LinkIcon, MessageSquare, Film, Smartphone, CreditCard, Cog, ChevronDown, CheckCircle, X, Shield } from "lucide-react";
+import { Save, Settings, Link as LinkIcon, Smartphone, CreditCard, Cog, ChevronDown, CheckCircle, Shield, Trash2, UserPlus, Key } from "lucide-react";
 import type { BotConfig } from "@shared/schema";
 
 interface ConfigField {
   key: string;
   label: string;
   description: string;
-  type: "text" | "textarea" | "url" | "video";
+  type: "text" | "textarea" | "url";
   placeholder: string;
 }
 
 const CONFIG_FIELDS: ConfigField[] = [
   { key: "manager_chat_id", label: "Chat ID менеджера", description: "Числовий Chat ID (не юзернейм!). Надішліть /start боту @userinfobot щоб дізнатися свій ID", type: "text", placeholder: "123456789" },
   { key: "club_id", label: "Club ID", description: "ID клубу для відображення на кроці 2", type: "text", placeholder: "CLUB123" },
-  { key: "welcome_text", label: "Текст привітання", description: "Повідомлення на головному екрані", type: "textarea", placeholder: "Вітаємо! Оберіть дію:" },
-  { key: "welcome_image", label: "Зображення привітання", description: "Зображення для головного екрану (URL або завантажити файл)", type: "video", placeholder: "https://example.com/welcome.jpg" },
-  { key: "android_video", label: "Відео Android", description: "Відео інструкція для Android (URL або завантажити файл)", type: "video", placeholder: "https://example.com/android.mp4" },
-  { key: "ios_video", label: "Відео iOS", description: "Відео інструкція для iOS (URL або завантажити файл)", type: "video", placeholder: "https://example.com/ios.mp4" },
-  { key: "windows_video", label: "Відео Windows", description: "Відео інструкція для Windows (URL або завантажити файл)", type: "video", placeholder: "https://example.com/windows.mp4" },
-  { key: "step2_text", label: "Текст кроку 2", description: "Інструкція для вступу до клубу", type: "textarea", placeholder: "Крок 2: Вступ до клубу" },
-  { key: "step2_video", label: "Відео кроку 2", description: "Відео для кроку 2 (URL або завантажити файл)", type: "video", placeholder: "https://example.com/video2.mp4" },
-  { key: "bonus_text", label: "Текст бонусу", description: "Опис бонусу на кроці 3", type: "textarea", placeholder: "Крок 3: Бонус" },
   { key: "rules_text", label: "Правила", description: "Текст правил", type: "textarea", placeholder: "Правила:" },
+  { key: "rules_link", label: "Посилання \u00AB\u041F\u0440\u0430\u0432\u0438\u043B\u0430 \u0431\u043E\u0442\u0430\u00BB", description: "URL \u0434\u043B\u044F \u043A\u043D\u043E\u043F\u043A\u0438 \u00AB\u041F\u0440\u0430\u0432\u0438\u043B\u0430 \u0431\u043E\u0442\u0430\u00BB (\u0432\u0456\u0434\u043A\u0440\u0438\u0432\u0430\u0454\u0442\u044C\u0441\u044F \u0443 \u0431\u0440\u0430\u0443\u0437\u0435\u0440\u0456)", type: "url", placeholder: "https://example.com/rules" },
+  { key: "telegram_channel_link", label: "Telegram \u043A\u0430\u043D\u0430\u043B", description: "\u041F\u043E\u0441\u0438\u043B\u0430\u043D\u043D\u044F \u043D\u0430 Telegram \u043A\u0430\u043D\u0430\u043B", type: "url", placeholder: "https://t.me/channel" },
+  { key: "telegram_group_link", label: "Telegram \u0433\u0440\u0443\u043F\u0430", description: "\u041F\u043E\u0441\u0438\u043B\u0430\u043D\u043D\u044F \u043D\u0430 Telegram \u0433\u0440\u0443\u043F\u0443", type: "url", placeholder: "https://t.me/group" },
+  { key: "instagram_link", label: "Instagram", description: "\u041F\u043E\u0441\u0438\u043B\u0430\u043D\u043D\u044F \u043D\u0430 Instagram", type: "url", placeholder: "https://instagram.com/..." },
+  { key: "website_link", label: "\u0421\u0430\u0439\u0442", description: "\u041F\u043E\u0441\u0438\u043B\u0430\u043D\u043D\u044F \u043D\u0430 \u0441\u0430\u0439\u0442", type: "url", placeholder: "https://example.com" },
+  { key: "club_join_link", label: "\u041F\u043E\u0441\u0438\u043B\u0430\u043D\u043D\u044F \u00AB\u0412\u0441\u0442\u0443\u043F\u0438\u0442\u0438 \u0432 \u043A\u043B\u0443\u0431\u00BB", description: "URL \u043A\u043D\u043E\u043F\u043A\u0438 \u00AB\u0412\u0441\u0442\u0443\u043F\u0438\u0442\u0438 \u0432 \u043A\u043B\u0443\u0431\u00BB \u0432 \u0433\u043E\u043B\u043E\u0432\u043D\u043E\u043C\u0443 \u043C\u0435\u043D\u044E", type: "url", placeholder: "https://example.com/club" },
   { key: "android_link", label: "Посилання Android", description: "URL для завантаження на Android", type: "url", placeholder: "https://play.google.com/..." },
   { key: "ios_link", label: "Посилання iOS", description: "URL для завантаження на iOS", type: "url", placeholder: "https://apps.apple.com/..." },
   { key: "windows_link", label: "Посилання Windows", description: "URL для завантаження на Windows", type: "url", placeholder: "https://example.com/download" },
@@ -39,7 +37,6 @@ const CONFIG_FIELDS: ConfigField[] = [
   { key: "convert2pay_merchant_id", label: "Convert2pay Merchant ID", description: "Ідентифікатор мерчанта Convert2pay", type: "text", placeholder: "merchant_123" },
   { key: "convert2pay_secret_key", label: "Convert2pay Secret Key", description: "Секретний ключ API Convert2pay", type: "text", placeholder: "sk_live_..." },
   { key: "convert2pay_currency", label: "Convert2pay валюта", description: "Код валюти (за замовчуванням UAH)", type: "text", placeholder: "UAH" },
-  { key: "admin_password", label: "Пароль адміністратора", description: "Пароль для входу в адмін панель", type: "text", placeholder: "Введіть новий пароль" },
 ];
 
 const SECTIONS = [
@@ -47,25 +44,19 @@ const SECTIONS = [
     title: "Основні",
     description: "Головні ідентифікатори бота",
     icon: Cog,
-    keys: ["manager_chat_id", "club_id"],
+    keys: ["manager_chat_id", "club_id", "rules_text", "rules_link"],
   },
   {
-    title: "Тексти бота",
-    description: "Повідомлення та інструкції для користувачів",
-    icon: MessageSquare,
-    keys: ["welcome_text", "step2_text", "bonus_text", "rules_text"],
-  },
-  {
-    title: "Медіа",
-    description: "Зображення та відео для бота",
-    icon: Film,
-    keys: ["welcome_image", "android_video", "ios_video", "windows_video", "step2_video"],
+    title: "Соціальні мережі",
+    description: "Посилання на соціальні мережі та сайт",
+    icon: LinkIcon,
+    keys: ["telegram_channel_link", "telegram_group_link", "instagram_link", "website_link"],
   },
   {
     title: "Посилання на додаток",
     description: "URL для завантаження додатку на різні платформи",
     icon: Smartphone,
-    keys: ["android_link", "ios_link", "windows_link"],
+    keys: ["android_link", "ios_link", "windows_link", "club_join_link"],
   },
   {
     title: "Оплата",
@@ -73,141 +64,187 @@ const SECTIONS = [
     icon: CreditCard,
     keys: ["payment_amounts", "convert2pay_api_url", "convert2pay_merchant_id", "convert2pay_secret_key", "convert2pay_currency"],
   },
-  {
-    title: "Безпека",
-    description: "Налаштування доступу до адмін панелі",
-    icon: Shield,
-    keys: ["admin_password"],
-  },
 ];
 
-function VideoUploadField({
-  fieldKey,
-  value,
-  onChange,
-  placeholder,
-}: {
-  fieldKey: string;
-  value: string;
-  onChange: (val: string) => void;
-  placeholder: string;
-}) {
-  const [uploading, setUploading] = useState(false);
-  const [showUrlInput, setShowUrlInput] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+interface AdminUser {
+  id: string;
+  username: string;
+}
+
+function AdminManagementSection() {
+  const { data: admins, isLoading } = useQuery<AdminUser[]>({
+    queryKey: ["/api/admins"],
+  });
   const { toast } = useToast();
+  const [newUsername, setNewUsername] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [changingPasswordId, setChangingPasswordId] = useState<string | null>(null);
+  const [newPasswordValue, setNewPasswordValue] = useState("");
+  const [isOpen, setIsOpen] = useState(true);
 
-  const isImage = value && /\.(jpg|jpeg|png|gif|webp)$/i.test(value);
-  const isVideo = value && /\.(mp4|mov|avi|webm)$/i.test(value);
+  const addAdmin = useMutation({
+    mutationFn: async () => {
+      await apiRequest("POST", "/api/admins", { username: newUsername, password: newPassword });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admins"] });
+      setNewUsername("");
+      setNewPassword("");
+      toast({ title: "Адміністратора додано" });
+    },
+    onError: (err: any) => {
+      toast({ title: err?.message || "Помилка", variant: "destructive" });
+    },
+  });
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const deleteAdmin = useMutation({
+    mutationFn: async (id: string) => {
+      await apiRequest("DELETE", `/api/admins/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admins"] });
+      toast({ title: "Адміністратора видалено" });
+    },
+    onError: (err: any) => {
+      toast({ title: err?.message || "Помилка", variant: "destructive" });
+    },
+  });
 
-    setUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
+  const changePassword = useMutation({
+    mutationFn: async ({ id, password }: { id: string; password: string }) => {
+      await apiRequest("PATCH", `/api/admins/${id}/password`, { password });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admins"] });
+      setChangingPasswordId(null);
+      setNewPasswordValue("");
+      toast({ title: "Пароль змінено" });
+    },
+    onError: (err: any) => {
+      toast({ title: err?.message || "Помилка", variant: "destructive" });
+    },
+  });
 
-      const res = await fetch("/api/upload", {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!res.ok) {
-        throw new Error("Upload failed");
-      }
-
-      const data = await res.json();
-      onChange(data.url);
-      toast({ title: "Файл завантажено" });
-    } catch {
-      toast({ title: "Помилка завантаження", variant: "destructive" });
-    } finally {
-      setUploading(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-    }
-  };
+  const maxReached = (admins?.length || 0) >= 3;
 
   return (
-    <div className="space-y-2">
-      {value && (
-        <div className="relative rounded-md overflow-hidden border bg-muted">
-          {isImage && (
-            <img
-              src={value}
-              alt="Preview"
-              className="max-h-40 w-auto object-contain mx-auto"
-              data-testid={`preview-image-${fieldKey}`}
-            />
-          )}
-          {isVideo && (
-            <video
-              src={value}
-              controls
-              className="max-h-40 w-full"
-              data-testid={`preview-video-${fieldKey}`}
-            />
-          )}
-          {!isImage && !isVideo && (
-            <p className="p-3 text-sm text-muted-foreground truncate" data-testid={`text-current-${fieldKey}`}>
-              {value}
-            </p>
-          )}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute top-1 right-1 bg-background/80"
-            onClick={() => onChange("")}
-            data-testid={`button-clear-${fieldKey}`}
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-      )}
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="video/*,image/*"
-        onChange={handleFileUpload}
-        className="hidden"
-        data-testid={`input-file-${fieldKey}`}
-      />
-      <Button
-        variant="outline"
-        onClick={() => fileInputRef.current?.click()}
-        disabled={uploading}
-        className="w-full"
-        data-testid={`button-upload-${fieldKey}`}
-      >
-        <Upload className="h-4 w-4 mr-2" />
-        {uploading ? "Завантаження..." : "Завантажити з галереї"}
-      </Button>
-      {showUrlInput ? (
-        <div className="flex gap-2">
-          <Input
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            placeholder={placeholder}
-            data-testid={`input-url-${fieldKey}`}
-          />
-          <Button variant="ghost" size="icon" onClick={() => setShowUrlInput(false)}>
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-      ) : (
-        <button
-          type="button"
-          className="text-xs text-muted-foreground hover:underline"
-          onClick={() => setShowUrlInput(true)}
-          data-testid={`button-show-url-${fieldKey}`}
-        >
-          або вставити URL
-        </button>
-      )}
-    </div>
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <div className="space-y-3">
+        <CollapsibleTrigger className="w-full" data-testid="button-toggle-section-admins">
+          <div className="flex items-center justify-between gap-4 hover-elevate rounded-md p-2 -ml-2">
+            <div className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-muted-foreground" />
+              <div className="text-left">
+                <h2 className="text-lg font-semibold" data-testid="text-section-admins">Адміністратори</h2>
+                <p className="text-sm text-muted-foreground">Управління доступом до адмін панелі</p>
+              </div>
+            </div>
+            <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+          </div>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <Card>
+            <CardContent className="p-4 space-y-4">
+              {isLoading ? (
+                <div className="h-16 bg-muted rounded animate-pulse" />
+              ) : (
+                <div className="space-y-3">
+                  {admins?.map((admin) => (
+                    <div key={admin.id} className="flex items-center justify-between gap-2 flex-wrap p-3 border rounded-md" data-testid={`admin-row-${admin.id}`}>
+                      <span className="text-sm font-medium" data-testid={`text-admin-username-${admin.id}`}>{admin.username}</span>
+                      <div className="flex items-center gap-1">
+                        {changingPasswordId === admin.id ? (
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="password"
+                              placeholder="Новий пароль"
+                              value={newPasswordValue}
+                              onChange={(e) => setNewPasswordValue(e.target.value)}
+                              className="w-40"
+                              data-testid={`input-change-password-${admin.id}`}
+                            />
+                            <Button
+                              size="sm"
+                              onClick={() => changePassword.mutate({ id: admin.id, password: newPasswordValue })}
+                              disabled={!newPasswordValue || changePassword.isPending}
+                              data-testid={`button-save-password-${admin.id}`}
+                            >
+                              <Save className="h-3 w-3 mr-1" />
+                              Зберегти
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => { setChangingPasswordId(null); setNewPasswordValue(""); }}
+                              data-testid={`button-cancel-password-${admin.id}`}
+                            >
+                              Скасувати
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => setChangingPasswordId(admin.id)}
+                            data-testid={`button-change-password-${admin.id}`}
+                          >
+                            <Key className="h-4 w-4" />
+                          </Button>
+                        )}
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => deleteAdmin.mutate(admin.id)}
+                          disabled={deleteAdmin.isPending || (admins?.length || 0) <= 1}
+                          data-testid={`button-delete-admin-${admin.id}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {maxReached ? (
+                <p className="text-sm text-muted-foreground" data-testid="text-max-admins">Максимальна кількість адміністраторів (3) досягнута</p>
+              ) : (
+                <div className="flex items-end gap-2 pt-2 border-t flex-wrap">
+                  <div className="flex-1 min-w-[120px] space-y-1">
+                    <Label className="text-xs">Логін</Label>
+                    <Input
+                      value={newUsername}
+                      onChange={(e) => setNewUsername(e.target.value)}
+                      placeholder="Логін"
+                      data-testid="input-new-admin-username"
+                    />
+                  </div>
+                  <div className="flex-1 min-w-[120px] space-y-1">
+                    <Label className="text-xs">Пароль</Label>
+                    <Input
+                      type="password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Пароль"
+                      data-testid="input-new-admin-password"
+                    />
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => addAdmin.mutate()}
+                    disabled={!newUsername || !newPassword || addAdmin.isPending}
+                    data-testid="button-add-admin"
+                  >
+                    <UserPlus className="h-3 w-3 mr-1" />
+                    Додати
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </CollapsibleContent>
+      </div>
+    </Collapsible>
   );
 }
 
@@ -319,14 +356,7 @@ export default function ConfigPage() {
                           </div>
                           <div className="flex gap-2 items-end justify-between flex-wrap">
                             <div className="flex-1 min-w-[200px]">
-                              {field.type === "video" ? (
-                                <VideoUploadField
-                                  fieldKey={field.key}
-                                  value={values[field.key] || ""}
-                                  onChange={(val) => setValues(prev => ({ ...prev, [field.key]: val }))}
-                                  placeholder={field.placeholder}
-                                />
-                              ) : field.type === "textarea" ? (
+                              {field.type === "textarea" ? (
                                 <Textarea
                                   value={values[field.key] || ""}
                                   onChange={(e) => setValues(prev => ({ ...prev, [field.key]: e.target.value }))}
@@ -366,6 +396,8 @@ export default function ConfigPage() {
             </div>
           </Collapsible>
         ))}
+
+        <AdminManagementSection />
       </div>
     </div>
   );

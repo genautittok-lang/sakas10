@@ -1,6 +1,6 @@
 import { useLocation, Link } from "wouter";
 import { useQuery } from "@tanstack/react-query";
-import { LayoutDashboard, Users, CreditCard, MessageSquare, Settings, Bot } from "lucide-react";
+import { LayoutDashboard, Users, CreditCard, MessageSquare, Settings, Footprints, Bot, Send } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -28,6 +28,8 @@ const menuItems = [
   { title: "Оплати", url: "/payments", icon: CreditCard, badgeKey: "pendingPayments" as const },
   { title: "Повідомлення", url: "/messages", icon: MessageSquare, badgeKey: "pendingMessages" as const },
   { title: "Налаштування", url: "/config", icon: Settings, badgeKey: null },
+  { title: "Кроки", url: "/steps", icon: Footprints, badgeKey: null },
+  { title: "Розсилка", url: "/broadcast", icon: Send, badgeKey: null },
 ];
 
 export function AppSidebar() {

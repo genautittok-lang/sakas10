@@ -18,6 +18,8 @@ import UsersPage from "@/pages/users-page";
 import PaymentsPage from "@/pages/payments-page";
 import MessagesPage from "@/pages/messages-page";
 import ConfigPage from "@/pages/config-page";
+import StepsPage from "@/pages/steps-page";
+import BroadcastPage from "@/pages/broadcast-page";
 
 const pageNames: Record<string, string> = {
   "/": "Дашборд",
@@ -25,6 +27,8 @@ const pageNames: Record<string, string> = {
   "/payments": "Оплати",
   "/messages": "Повідомлення",
   "/config": "Налаштування",
+  "/steps": "Кроки",
+  "/broadcast": "Розсилка",
 };
 
 function Router() {
@@ -35,6 +39,8 @@ function Router() {
       <Route path="/payments" component={PaymentsPage} />
       <Route path="/messages" component={MessagesPage} />
       <Route path="/config" component={ConfigPage} />
+      <Route path="/steps" component={StepsPage} />
+      <Route path="/broadcast" component={BroadcastPage} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -71,6 +77,7 @@ function ThemeToggle() {
 }
 
 function LoginPage({ onLogin }: { onLogin: () => void }) {
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -80,10 +87,10 @@ function LoginPage({ onLogin }: { onLogin: () => void }) {
     setLoading(true);
     setError("");
     try {
-      await apiRequest("POST", "/api/auth/login", { password });
+      await apiRequest("POST", "/api/auth/login", { username, password });
       onLogin();
     } catch {
-      setError("Невірний пароль");
+      setError("Невірний логін або пароль");
     } finally {
       setLoading(false);
     }
@@ -102,12 +109,19 @@ function LoginPage({ onLogin }: { onLogin: () => void }) {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Input
+                type="text"
+                placeholder="Логін"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                data-testid="input-login-username"
+                autoFocus
+              />
+              <Input
                 type="password"
                 placeholder="Пароль"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 data-testid="input-login-password"
-                autoFocus
               />
               {error && (
                 <p className="text-sm text-destructive" data-testid="text-login-error">{error}</p>
@@ -116,7 +130,7 @@ function LoginPage({ onLogin }: { onLogin: () => void }) {
             <Button
               type="submit"
               className="w-full"
-              disabled={loading || !password}
+              disabled={loading || !username || !password}
               data-testid="button-login-submit"
             >
               {loading ? "Вхід..." : "Увійти"}

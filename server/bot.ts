@@ -174,17 +174,39 @@ async function showHome(chatId: number, tgId: string) {
     },
   });
 
+  const telegramChannelLink = await getConfigValue("telegram_channel_link", "");
+  const telegramGroupLink = await getConfigValue("telegram_group_link", "");
+  const instagramLink = await getConfigValue("instagram_link", "");
+  const websiteLink = await getConfigValue("website_link", "");
+
+  const socialButtons: any[][] = [];
+  if (telegramChannelLink) socialButtons.push([{ text: "\u{1F4E2} Telegram \u043A\u0430\u043D\u0430\u043B", url: telegramChannelLink }]);
+  if (telegramGroupLink) socialButtons.push([{ text: "\u{1F4AC} Telegram \u0433\u0440\u0443\u043F\u0430", url: telegramGroupLink }]);
+  if (instagramLink) socialButtons.push([{ text: "\u{1F4F8} Instagram", url: instagramLink }]);
+  if (websiteLink) socialButtons.push([{ text: "\u{1F310} \u0421\u0430\u0439\u0442", url: websiteLink }]);
+
+  if (socialButtons.length > 0) {
+    await bot!.sendMessage(chatId, "\u{1F517} \u041D\u0430\u0448\u0456 \u0440\u0435\u0441\u0443\u0440\u0441\u0438:", {
+      reply_markup: { inline_keyboard: socialButtons },
+    });
+  }
+
+  const clubJoinLink = await getConfigValue("club_join_link", "");
   const welcomeImage = await getConfigValue("welcome_image", "");
+
+  const inlineKeyboard: any[][] = [];
+  if (clubJoinLink) {
+    inlineKeyboard.push([{ text: "\u{1F3E0} \u0412\u0441\u0442\u0443\u043F\u0438\u0442\u0438 \u0432 \u043A\u043B\u0443\u0431", url: clubJoinLink }]);
+  }
+  inlineKeyboard.push([
+    { text: "\u{1F916} Android", callback_data: "show_android" },
+    { text: "\u{1F34E} iOS", callback_data: "show_ios" },
+    { text: "\u{1F5A5} Windows", callback_data: "show_windows" },
+  ]);
+  inlineKeyboard.push([{ text: "\u{1F4CB} \u041F\u0440\u0430\u0432\u0438\u043B\u0430", callback_data: "rules" }]);
+
   const buttons = {
-    reply_markup: {
-      inline_keyboard: [
-        [
-          { text: "\u{1F916} Android", callback_data: "show_android" },
-          { text: "\u{1F34E} iOS", callback_data: "show_ios" },
-          { text: "\u{1F5A5} Windows", callback_data: "show_windows" },
-        ],
-      ],
-    },
+    reply_markup: { inline_keyboard: inlineKeyboard },
   };
 
   if (welcomeImage) {
@@ -657,12 +679,14 @@ export function startBot() {
     if (data === "rules") {
       const rulesText = await getConfigValue("rules_text",
         "\u{1F4CB} \u041F\u0440\u0430\u0432\u0438\u043B\u0430:\n\n1. \u0412\u0441\u0442\u0430\u043D\u043E\u0432\u0456\u0442\u044C \u0434\u043E\u0434\u0430\u0442\u043E\u043A\n2. \u0412\u0441\u0442\u0443\u043F\u0456\u0442\u044C \u0434\u043E \u043A\u043B\u0443\u0431\u0443\n3. \u041E\u0442\u0440\u0438\u043C\u0430\u0439\u0442\u0435 \u0431\u043E\u043D\u0443\u0441\n4. \u041F\u043E\u043F\u043E\u0432\u043D\u044E\u0439\u0442\u0435 \u0440\u0430\u0445\u0443\u043D\u043E\u043A");
+      const rulesLink = await getConfigValue("rules_link", "");
+      const rulesKeyboard: any[][] = [];
+      if (rulesLink) {
+        rulesKeyboard.push([{ text: "\u{1F4CB} \u041F\u0440\u0430\u0432\u0438\u043B\u0430 \u0431\u043E\u0442\u0430", url: rulesLink }]);
+      }
+      rulesKeyboard.push([{ text: "\u{1F3E0} \u0413\u043E\u043B\u043E\u0432\u043D\u0430", callback_data: "go_home" }]);
       await bot!.sendMessage(chatId, rulesText, {
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: "\u{1F3E0} \u0413\u043E\u043B\u043E\u0432\u043D\u0430", callback_data: "go_home" }],
-          ],
-        },
+        reply_markup: { inline_keyboard: rulesKeyboard },
       });
       return;
     }
@@ -800,17 +824,25 @@ export function startBot() {
         return;
       }
 
-      if (broadcastState.get(managerChatId) && msg.text) {
+      if (broadcastState.get(managerChatId) && (msg.text || msg.photo)) {
         broadcastState.delete(managerChatId);
         const allUsers = await storage.getAllBotUsers();
         let sent = 0;
         let failed = 0;
 
+        const broadcastText = msg.caption || msg.text || "";
+        const photoFileId = msg.photo ? msg.photo[msg.photo.length - 1].file_id : null;
+
         await bot!.sendMessage(chatId, `\u{1F4E2} \u0420\u043E\u0437\u0441\u0438\u043B\u043A\u0430 \u0440\u043E\u0437\u043F\u043E\u0447\u0430\u0442\u0430... (\u{1F465} ${allUsers.length} \u043A\u043E\u0440\u0438\u0441\u0442\u0443\u0432\u0430\u0447\u0456\u0432)`);
 
         for (const u of allUsers) {
           try {
-            await bot!.sendMessage(parseInt(u.tgId), msg.text);
+            const userChatId = parseInt(u.tgId);
+            if (photoFileId) {
+              await bot!.sendPhoto(userChatId, photoFileId, { caption: broadcastText });
+            } else {
+              await bot!.sendMessage(userChatId, broadcastText);
+            }
             sent++;
           } catch (err) {
             failed++;
@@ -946,5 +978,32 @@ export async function sendMessageToUser(tgId: string, message: string) {
     await bot.sendMessage(parseInt(tgId), message);
   } catch (err) {
     log(`Failed to send message to user ${tgId}: ${err}`, "bot");
+  }
+}
+
+export async function sendBroadcastMessage(
+  chatId: number,
+  text: string,
+  photoUrl: string | null,
+  buttons?: Array<{text: string, url: string}>
+) {
+  if (!bot) return;
+
+  const replyMarkup = buttons?.length ? {
+    reply_markup: {
+      inline_keyboard: buttons.map(b => [{ text: b.text, url: b.url }])
+    }
+  } : {};
+
+  if (photoUrl) {
+    const source = resolveMediaSource(photoUrl);
+    if (source) {
+      const fileOpts = getFileOptions(photoUrl);
+      await bot.sendPhoto(chatId, source, { caption: text, ...replyMarkup }, { ...fileOpts });
+    } else {
+      await bot.sendMessage(chatId, text, replyMarkup);
+    }
+  } else {
+    await bot.sendMessage(chatId, text, replyMarkup);
   }
 }
