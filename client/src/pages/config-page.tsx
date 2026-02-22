@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { Save, Settings, Link as LinkIcon, Smartphone, CreditCard, Cog, ChevronDown, CheckCircle, Shield, Trash2, UserPlus, Key, Users } from "lucide-react";
+import { Save, Settings, Link as LinkIcon, Smartphone, CreditCard, Cog, ChevronDown, CheckCircle, Shield, Trash2, UserPlus, Key, Users, Plus } from "lucide-react";
 import type { BotConfig } from "@shared/schema";
 
 interface ConfigField {
@@ -23,10 +23,6 @@ const CONFIG_FIELDS: ConfigField[] = [
   { key: "club_id", label: "Club ID", description: "ID клубу для відображення на кроці 2", type: "text", placeholder: "CLUB123" },
   { key: "rules_text", label: "Правила", description: "Текст правил", type: "textarea", placeholder: "Правила:" },
   { key: "rules_link", label: "Посилання \u00AB\u041F\u0440\u0430\u0432\u0438\u043B\u0430 \u0431\u043E\u0442\u0430\u00BB", description: "URL \u0434\u043B\u044F \u043A\u043D\u043E\u043F\u043A\u0438 \u00AB\u041F\u0440\u0430\u0432\u0438\u043B\u0430 \u0431\u043E\u0442\u0430\u00BB (\u0432\u0456\u0434\u043A\u0440\u0438\u0432\u0430\u0454\u0442\u044C\u0441\u044F \u0443 \u0431\u0440\u0430\u0443\u0437\u0435\u0440\u0456)", type: "url", placeholder: "https://example.com/rules" },
-  { key: "telegram_channel_link", label: "Telegram \u043A\u0430\u043D\u0430\u043B", description: "\u041F\u043E\u0441\u0438\u043B\u0430\u043D\u043D\u044F \u043D\u0430 Telegram \u043A\u0430\u043D\u0430\u043B", type: "url", placeholder: "https://t.me/channel" },
-  { key: "telegram_group_link", label: "Telegram \u0433\u0440\u0443\u043F\u0430", description: "\u041F\u043E\u0441\u0438\u043B\u0430\u043D\u043D\u044F \u043D\u0430 Telegram \u0433\u0440\u0443\u043F\u0443", type: "url", placeholder: "https://t.me/group" },
-  { key: "instagram_link", label: "Instagram", description: "\u041F\u043E\u0441\u0438\u043B\u0430\u043D\u043D\u044F \u043D\u0430 Instagram", type: "url", placeholder: "https://instagram.com/..." },
-  { key: "website_link", label: "\u0421\u0430\u0439\u0442", description: "\u041F\u043E\u0441\u0438\u043B\u0430\u043D\u043D\u044F \u043D\u0430 \u0441\u0430\u0439\u0442", type: "url", placeholder: "https://example.com" },
   { key: "club_join_link", label: "\u041F\u043E\u0441\u0438\u043B\u0430\u043D\u043D\u044F \u00AB\u0412\u0441\u0442\u0443\u043F\u0438\u0442\u0438 \u0432 \u043A\u043B\u0443\u0431\u00BB", description: "URL \u043A\u043D\u043E\u043F\u043A\u0438 \u00AB\u0412\u0441\u0442\u0443\u043F\u0438\u0442\u0438 \u0432 \u043A\u043B\u0443\u0431\u00BB \u0432 \u0433\u043E\u043B\u043E\u0432\u043D\u043E\u043C\u0443 \u043C\u0435\u043D\u044E", type: "url", placeholder: "https://example.com/club" },
   { key: "android_link", label: "Посилання Android", description: "URL для завантаження на Android", type: "url", placeholder: "https://play.google.com/..." },
   { key: "ios_link", label: "Посилання iOS", description: "URL для завантаження на iOS", type: "url", placeholder: "https://apps.apple.com/..." },
@@ -44,12 +40,6 @@ const SECTIONS = [
     description: "Головні ідентифікатори бота",
     icon: Cog,
     keys: ["club_id", "rules_text", "rules_link"],
-  },
-  {
-    title: "Соціальні мережі",
-    description: "Посилання на соціальні мережі та сайт",
-    icon: LinkIcon,
-    keys: ["telegram_channel_link", "telegram_group_link", "instagram_link", "website_link"],
   },
   {
     title: "Посилання на додаток",
@@ -145,6 +135,138 @@ function ModeratorSection({ configList }: { configList: BotConfig[] | undefined 
                 )}
                 {isSaved ? "Збережено" : "Зберегти"}
               </Button>
+            </CardContent>
+          </Card>
+        </CollapsibleContent>
+      </div>
+    </Collapsible>
+  );
+}
+
+interface SocialLink {
+  name: string;
+  url: string;
+}
+
+function SocialLinksSection({ configList }: { configList: BotConfig[] | undefined }) {
+  const { toast } = useToast();
+  const [links, setLinks] = useState<SocialLink[]>([]);
+  const [newName, setNewName] = useState("");
+  const [newUrl, setNewUrl] = useState("");
+  const [isOpen, setIsOpen] = useState(true);
+  const [isSaved, setIsSaved] = useState(false);
+
+  useEffect(() => {
+    if (configList) {
+      const entry = configList.find(c => c.key === "social_links");
+      if (entry?.value) {
+        try {
+          const parsed = JSON.parse(entry.value);
+          if (Array.isArray(parsed)) setLinks(parsed);
+        } catch {}
+      }
+    }
+  }, [configList]);
+
+  const saveLinks = useMutation({
+    mutationFn: async (updatedLinks: SocialLink[]) => {
+      await apiRequest("POST", "/api/config", { key: "social_links", value: JSON.stringify(updatedLinks) });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/config"] });
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 2000);
+      toast({ title: "Збережено" });
+    },
+    onError: () => {
+      toast({ title: "Помилка збереження", variant: "destructive" });
+    },
+  });
+
+  const addLink = () => {
+    if (!newName.trim() || !newUrl.trim()) return;
+    const updated = [...links, { name: newName.trim(), url: newUrl.trim() }];
+    setLinks(updated);
+    setNewName("");
+    setNewUrl("");
+    saveLinks.mutate(updated);
+  };
+
+  const removeLink = (index: number) => {
+    const updated = links.filter((_, i) => i !== index);
+    setLinks(updated);
+    saveLinks.mutate(updated);
+  };
+
+  return (
+    <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+      <div className="space-y-3">
+        <CollapsibleTrigger className="w-full" data-testid="button-toggle-section-social">
+          <div className="flex items-center justify-between gap-4 hover-elevate rounded-md p-2 -ml-2">
+            <div className="flex items-center gap-2">
+              <LinkIcon className="h-5 w-5 text-muted-foreground" />
+              <div className="text-left">
+                <h2 className="text-lg font-semibold" data-testid="text-section-social">Соціальні мережі</h2>
+                <p className="text-sm text-muted-foreground">Посилання у вітальному повідомленні (клікабельний текст)</p>
+              </div>
+            </div>
+            <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+          </div>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <Card>
+            <CardContent className="p-4 space-y-4">
+              {links.length === 0 && (
+                <p className="text-sm text-muted-foreground" data-testid="text-no-social-links">Немає доданих посилань</p>
+              )}
+              <div className="space-y-2">
+                {links.map((link, index) => (
+                  <div key={index} className="flex items-center justify-between gap-2 p-3 border rounded-md" data-testid={`social-link-row-${index}`}>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate" data-testid={`text-social-name-${index}`}>{link.name}</p>
+                      <p className="text-xs text-muted-foreground truncate" data-testid={`text-social-url-${index}`}>{link.url}</p>
+                    </div>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => removeLink(index)}
+                      disabled={saveLinks.isPending}
+                      data-testid={`button-delete-social-${index}`}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-end gap-2 pt-2 border-t flex-wrap">
+                <div className="flex-1 min-w-[120px] space-y-1">
+                  <Label className="text-xs">Назва</Label>
+                  <Input
+                    value={newName}
+                    onChange={(e) => setNewName(e.target.value)}
+                    placeholder="Telegram канал"
+                    data-testid="input-new-social-name"
+                  />
+                </div>
+                <div className="flex-1 min-w-[120px] space-y-1">
+                  <Label className="text-xs">Посилання</Label>
+                  <Input
+                    value={newUrl}
+                    onChange={(e) => setNewUrl(e.target.value)}
+                    placeholder="https://t.me/channel"
+                    data-testid="input-new-social-url"
+                  />
+                </div>
+                <Button
+                  size="sm"
+                  onClick={addLink}
+                  disabled={!newName.trim() || !newUrl.trim() || saveLinks.isPending}
+                  data-testid="button-add-social"
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Додати
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </CollapsibleContent>
@@ -406,6 +528,7 @@ export default function ConfigPage() {
 
       <div className="space-y-6">
         <ModeratorSection configList={configList} />
+        <SocialLinksSection configList={configList} />
 
         {SECTIONS.map((section) => (
           <Collapsible

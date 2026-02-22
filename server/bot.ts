@@ -179,16 +179,16 @@ async function showHome(chatId: number, tgId: string) {
   const welcomeText = await getConfigValue("welcome_text",
     "\u{1F44B} \u0412\u0456\u0442\u0430\u0454\u043C\u043E \u0432 \u043F\u0440\u0438\u0432\u0430\u0442\u043D\u043E\u043C\u0443 \u043A\u043B\u0443\u0431\u0456 W Dealz !\n\n\u{1F525} \u0427\u043E\u043C\u0443 \u0443\u043A\u0440\u0430\u0457\u043D\u0446\u0456 \u043E\u0431\u0440\u0430\u043B\u0438 \u0441\u0430\u043C\u0435 \u043D\u0430\u0441:\n\u2705 \u0428\u0432\u0438\u0434\u043A\u0430 \u0440\u0435\u0454\u0441\u0442\u0440\u0430\u0446\u0456\u044F \u0431\u0435\u0437 \u0432\u0435\u0440\u0438\u0444\u0456\u043A\u0430\u0446\u0456\u0457\n\u2705 \u0420\u0435\u0439\u043A\u0431\u0435\u043A \u0432\u0441\u0456\u043C \u0433\u0440\u0430\u0432\u0446\u044F\u043C\n\u2705 \u0414\u0436\u0435\u043A\u043F\u043E\u0442 \n\n\u{1F3C6} \u041B\u0406\u0414\u0415\u0420\u0411\u041E\u0420\u0414\u0418 \n\n\u{1F4B0} \u20B4 50 000 \u0422\u0423\u0420\u041D\u0406\u0420\u041D\u0418\u0419 \u0424\u041E\u041D\u0414 \u0429\u041E\u041C\u0406\u0421\u042F\u0426\u042F\n2-5+ \u0442\u0443\u0440\u043D\u0456\u0440\u0456\u0432 \u043D\u0430 \u0434\u0435\u043D\u044C\n\n\u{1F48E} \u041F\u041E\u0414\u0412\u041E\u042E\u0419 \u041F\u0415\u0420\u0428\u0418\u0419 \u0414\u0415\u041F\u041E\u0417\u0418\u0422!\n\u041C\u0438\u0442\u0442\u0454\u0432\u0435 \u043F\u043E\u043F\u043E\u0432\u043D\u0435\u043D\u043D\u044F \u0432\u0456\u0434 \u20B4 500, \u0432\u0438\u0432\u0456\u0434 \u0434\u0432\u0430 \u0440\u0430\u0437\u0438 \u043D\u0430 \u0434\u043E\u0431\u0443");
 
-  const telegramChannelLink = await getConfigValue("telegram_channel_link", "");
-  const telegramGroupLink = await getConfigValue("telegram_group_link", "");
-  const instagramLink = await getConfigValue("instagram_link", "");
-  const websiteLink = await getConfigValue("website_link", "");
+  const socialLinksJson = await getConfigValue("social_links", "[]");
+  let socialLinks: { name: string; url: string }[] = [];
+  try {
+    const parsed = JSON.parse(socialLinksJson);
+    if (Array.isArray(parsed)) socialLinks = parsed;
+  } catch {}
 
-  const socialLines: string[] = [];
-  if (telegramGroupLink) socialLines.push(`<a href="${telegramGroupLink}">\u{1F465} \u0413\u0440\u0443\u043F\u0430 \u0433\u0440\u0430\u0432\u0446\u0456\u0432 \u043A\u043B\u0443\u0431\u0443</a>`);
-  if (telegramChannelLink) socialLines.push(`<a href="${telegramChannelLink}">\u{1F4E2} \u041A\u0430\u043D\u0430\u043B</a>`);
-  if (instagramLink) socialLines.push(`<a href="${instagramLink}">\u{1F4F8} Instagram</a>`);
-  if (websiteLink) socialLines.push(`<a href="${websiteLink}">\u{1F310} \u0421\u0430\u0439\u0442</a>`);
+  const socialLines: string[] = socialLinks
+    .filter(l => l.name && l.url)
+    .map(l => `<a href="${l.url}">${l.name}</a>`);
 
   let fullWelcomeText = welcomeText;
   if (socialLines.length > 0) {

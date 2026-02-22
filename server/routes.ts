@@ -64,15 +64,29 @@ async function seedDefaults() {
     payment_amounts: "100, 200, 500, 1000, 2000, 5000",
     club_join_link: "https://example.com/club",
     rules_link: "",
-    telegram_channel_link: "",
-    telegram_group_link: "",
-    instagram_link: "",
-    website_link: "",
+    social_links: "[]",
   };
 
   for (const [key, value] of Object.entries(defaults)) {
     if (!existingKeys.has(key)) {
       await storage.setConfig(key, value);
+    }
+  }
+
+  if (!existingKeys.has("social_links") || configs.find((c: any) => c.key === "social_links")?.value === "[]") {
+    const oldKeys = [
+      { configKey: "telegram_group_link", name: "Telegram група" },
+      { configKey: "telegram_channel_link", name: "Telegram канал" },
+      { configKey: "instagram_link", name: "Instagram" },
+      { configKey: "website_link", name: "Сайт" },
+    ];
+    const migrated: { name: string; url: string }[] = [];
+    for (const { configKey, name } of oldKeys) {
+      const entry = configs.find((c: any) => c.key === configKey);
+      if (entry?.value) migrated.push({ name, url: entry.value });
+    }
+    if (migrated.length > 0) {
+      await storage.setConfig("social_links", JSON.stringify(migrated));
     }
   }
 
