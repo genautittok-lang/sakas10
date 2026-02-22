@@ -179,38 +179,34 @@ async function showHome(chatId: number, tgId: string) {
   const welcomeText = await getConfigValue("welcome_text",
     "\u{1F44B} \u0412\u0456\u0442\u0430\u0454\u043C\u043E \u0432 \u043F\u0440\u0438\u0432\u0430\u0442\u043D\u043E\u043C\u0443 \u043A\u043B\u0443\u0431\u0456 W Dealz !\n\n\u{1F525} \u0427\u043E\u043C\u0443 \u0443\u043A\u0440\u0430\u0457\u043D\u0446\u0456 \u043E\u0431\u0440\u0430\u043B\u0438 \u0441\u0430\u043C\u0435 \u043D\u0430\u0441:\n\u2705 \u0428\u0432\u0438\u0434\u043A\u0430 \u0440\u0435\u0454\u0441\u0442\u0440\u0430\u0446\u0456\u044F \u0431\u0435\u0437 \u0432\u0435\u0440\u0438\u0444\u0456\u043A\u0430\u0446\u0456\u0457\n\u2705 \u0420\u0435\u0439\u043A\u0431\u0435\u043A \u0432\u0441\u0456\u043C \u0433\u0440\u0430\u0432\u0446\u044F\u043C\n\u2705 \u0414\u0436\u0435\u043A\u043F\u043E\u0442 \n\n\u{1F3C6} \u041B\u0406\u0414\u0415\u0420\u0411\u041E\u0420\u0414\u0418 \n\n\u{1F4B0} \u20B4 50 000 \u0422\u0423\u0420\u041D\u0406\u0420\u041D\u0418\u0419 \u0424\u041E\u041D\u0414 \u0429\u041E\u041C\u0406\u0421\u042F\u0426\u042F\n2-5+ \u0442\u0443\u0440\u043D\u0456\u0440\u0456\u0432 \u043D\u0430 \u0434\u0435\u043D\u044C\n\n\u{1F48E} \u041F\u041E\u0414\u0412\u041E\u042E\u0419 \u041F\u0415\u0420\u0428\u0418\u0419 \u0414\u0415\u041F\u041E\u0417\u0418\u0422!\n\u041C\u0438\u0442\u0442\u0454\u0432\u0435 \u043F\u043E\u043F\u043E\u0432\u043D\u0435\u043D\u043D\u044F \u0432\u0456\u0434 \u20B4 500, \u0432\u0438\u0432\u0456\u0434 \u0434\u0432\u0430 \u0440\u0430\u0437\u0438 \u043D\u0430 \u0434\u043E\u0431\u0443");
 
-  await bot!.sendMessage(chatId, welcomeText, {
-    reply_markup: {
-      keyboard: [[{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7" }]],
-      resize_keyboard: true,
-      is_persistent: true,
-    },
-  });
-
   const telegramChannelLink = await getConfigValue("telegram_channel_link", "");
   const telegramGroupLink = await getConfigValue("telegram_group_link", "");
   const instagramLink = await getConfigValue("instagram_link", "");
   const websiteLink = await getConfigValue("website_link", "");
 
-  const socialButtons: any[][] = [];
-  if (telegramChannelLink) socialButtons.push([{ text: "\u{1F4E2} Telegram \u043A\u0430\u043D\u0430\u043B", url: telegramChannelLink }]);
-  if (telegramGroupLink) socialButtons.push([{ text: "\u{1F4AC} Telegram \u0433\u0440\u0443\u043F\u0430", url: telegramGroupLink }]);
-  if (instagramLink) socialButtons.push([{ text: "\u{1F4F8} Instagram", url: instagramLink }]);
-  if (websiteLink) socialButtons.push([{ text: "\u{1F310} \u0421\u0430\u0439\u0442", url: websiteLink }]);
+  const socialLines: string[] = [];
+  if (telegramGroupLink) socialLines.push(`\u{1F465} \u0413\u0440\u0443\u043F\u0430 \u0433\u0440\u0430\u0432\u0446\u0456\u0432 \u043A\u043B\u0443\u0431\u0443 ${telegramGroupLink}`);
+  if (telegramChannelLink) socialLines.push(`\u{1F4E2} \u041A\u0430\u043D\u0430\u043B ${telegramChannelLink}`);
+  if (instagramLink) socialLines.push(`\u{1F4F8} Instagram ${instagramLink}`);
+  if (websiteLink) socialLines.push(`\u{1F310} ${websiteLink}`);
 
-  if (socialButtons.length > 0) {
-    await bot!.sendMessage(chatId, "\u{1F517} \u041D\u0430\u0448\u0456 \u0440\u0435\u0441\u0443\u0440\u0441\u0438:", {
-      reply_markup: { inline_keyboard: socialButtons },
-    });
+  let fullWelcomeText = welcomeText;
+  if (socialLines.length > 0) {
+    fullWelcomeText += "\n\n" + socialLines.join(" ");
   }
 
-  const clubJoinLink = await getConfigValue("club_join_link", "");
+  await bot!.sendMessage(chatId, fullWelcomeText, {
+    reply_markup: {
+      keyboard: [[{ text: "\u{1F4DE} \u041C\u0435\u043D\u0435\u0434\u0436\u0435\u0440 24/7" }]],
+      resize_keyboard: true,
+      is_persistent: true,
+    },
+    disable_web_page_preview: true,
+  });
+
   const welcomeImage = await getConfigValue("welcome_image", "");
 
   const inlineKeyboard: any[][] = [];
-  if (clubJoinLink) {
-    inlineKeyboard.push([{ text: "\u{1F3E0} \u0412\u0441\u0442\u0443\u043F\u0438\u0442\u0438 \u0432 \u043A\u043B\u0443\u0431", url: clubJoinLink }]);
-  }
   inlineKeyboard.push([
     { text: "\u{1F916} Android", callback_data: "show_android" },
     { text: "\u{1F34E} iOS", callback_data: "show_ios" },
@@ -312,12 +308,17 @@ async function showStep2(chatId: number) {
     await bot!.sendMessage(chatId, text);
   }
 
+  const clubJoinLink = await getConfigValue("club_join_link", "");
+  const step2Keyboard: any[][] = [];
+  if (clubJoinLink) {
+    step2Keyboard.push([{ text: "\u{1F3E0} \u0412\u0441\u0442\u0443\u043F\u0438\u0442\u0438 \u0432 \u043A\u043B\u0443\u0431", url: clubJoinLink }]);
+  }
+  step2Keyboard.push([{ text: "\u2705 \u042F \u0432 \u043A\u043B\u0443\u0431\u0456", callback_data: "joined_club" }]);
+  step2Keyboard.push([{ text: "\u274C \u041D\u0435 \u0437\u043D\u0430\u0439\u0448\u043E\u0432 \u043A\u043B\u0443\u0431", callback_data: "club_not_found" }]);
+
   await bot!.sendMessage(chatId, "\u041E\u0431\u0435\u0440\u0456\u0442\u044C \u0434\u0456\u044E:", {
     reply_markup: {
-      inline_keyboard: [
-        [{ text: "\u2705 \u042F \u0432 \u043A\u043B\u0443\u0431\u0456", callback_data: "joined_club" }],
-        [{ text: "\u274C \u041D\u0435 \u0437\u043D\u0430\u0439\u0448\u043E\u0432 \u043A\u043B\u0443\u0431", callback_data: "club_not_found" }],
-      ],
+      inline_keyboard: step2Keyboard,
     },
   });
 }
