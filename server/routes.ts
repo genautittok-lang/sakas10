@@ -297,14 +297,19 @@ export async function registerRoutes(
       return res.status(404).json({ message: "Payment not found" });
     }
 
+    const now = new Date();
+    const dateStr = now.toLocaleString("uk-UA", { timeZone: "Europe/Kyiv", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
     if (status === "paid") {
       const user = await storage.getBotUser(payment.tgId);
       await sendMessageToUser(payment.tgId,
-        `\u2705 \u041E\u043F\u043B\u0430\u0442\u0430 \u043F\u0456\u0434\u0442\u0432\u0435\u0440\u0434\u0436\u0435\u043D\u0430!\n\n\u{1F4B0} \u0421\u0443\u043C\u0430: ${payment.amount} \u20B4\n\u{1F3AE} Player ID: ${payment.playerId}`);
-      await notifyManagerPayment(payment.tgId, user?.username || null, payment.amount, payment.playerId);
+        `✅ Оплата підтверджена!\n\n💰 Сума: ${payment.amount} ₴\n🎮 Player ID: ${payment.playerId}\n📅 Дата: ${dateStr}`);
+      await notifyManagerPayment(payment.tgId, user?.username || null, payment.amount, payment.playerId, dateStr);
     } else if (status === "cancelled") {
       await sendMessageToUser(payment.tgId,
-        `\u274C \u041E\u043F\u043B\u0430\u0442\u0430 \u0441\u043A\u0430\u0441\u043E\u0432\u0430\u043D\u0430.\n\n\u0412\u0438\u043A\u043E\u0440\u0438\u0441\u0442\u0430\u0439\u0442\u0435 /start \u0449\u043E\u0431 \u043F\u043E\u0432\u0435\u0440\u043D\u0443\u0442\u0438\u0441\u044C \u043D\u0430 \u0433\u043E\u043B\u043E\u0432\u043D\u0443.`);
+        `❌ Оплата не пройшла / скасована.\n\nЯкщо це помилка — спробуйте ще раз або зверніться до підтримки.`);
+    } else if (status === "processing") {
+      await sendMessageToUser(payment.tgId,
+        `⏳ Ваш платіж знаходиться в обробці.\n\nБудь ласка, зачекайте кілька хвилин і перевірте статус ще раз.`);
     }
 
     res.json(payment);
@@ -349,14 +354,19 @@ export async function registerRoutes(
 
       const updated = await storage.updatePaymentStatus(payment.id, newStatus);
 
+      const webhookNow = new Date();
+      const webhookDateStr = webhookNow.toLocaleString("uk-UA", { timeZone: "Europe/Kyiv", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
       if (newStatus === "paid" && updated) {
         const user = await storage.getBotUser(updated.tgId);
         await sendMessageToUser(updated.tgId,
-          `\u2705 \u041E\u043F\u043B\u0430\u0442\u0430 \u043F\u0456\u0434\u0442\u0432\u0435\u0440\u0434\u0436\u0435\u043D\u0430!\n\n\u{1F4B0} \u0421\u0443\u043C\u0430: ${updated.amount} \u20B4\n\u{1F3AE} Player ID: ${updated.playerId}`);
-        await notifyManagerPayment(updated.tgId, user?.username || null, updated.amount, updated.playerId);
+          `✅ Оплата підтверджена!\n\n💰 Сума: ${updated.amount} ₴\n🎮 Player ID: ${updated.playerId}\n📅 Дата: ${webhookDateStr}`);
+        await notifyManagerPayment(updated.tgId, user?.username || null, updated.amount, updated.playerId, webhookDateStr);
       } else if (newStatus === "cancelled" && updated) {
         await sendMessageToUser(updated.tgId,
-          `\u274C \u041E\u043F\u043B\u0430\u0442\u0430 \u0441\u043A\u0430\u0441\u043E\u0432\u0430\u043D\u0430.\n\n\u0412\u0438\u043A\u043E\u0440\u0438\u0441\u0442\u0430\u0439\u0442\u0435 /start \u0449\u043E\u0431 \u043F\u043E\u0432\u0435\u0440\u043D\u0443\u0442\u0438\u0441\u044C \u043D\u0430 \u0433\u043E\u043B\u043E\u0432\u043D\u0443.`);
+          `❌ Оплата не пройшла / скасована.\n\nЯкщо це помилка — спробуйте ще раз або зверніться до підтримки.`);
+      } else if (newStatus === "processing" && updated) {
+        await sendMessageToUser(updated.tgId,
+          `⏳ Ваш платіж знаходиться в обробці.\n\nБудь ласка, зачекайте кілька хвилин і перевірте статус ще раз.`);
       }
 
       res.json({ success: true });

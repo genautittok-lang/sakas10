@@ -951,17 +951,18 @@ export function getBot() {
   return bot;
 }
 
-export async function notifyManagerPayment(tgId: string, username: string | null, amount: number, playerId: string) {
+export async function notifyManagerPayment(tgId: string, username: string | null, amount: number, playerId: string, dateStr?: string) {
   if (!bot) return;
   const moderatorIds = await getModeratorChatIds();
   if (moderatorIds.length === 0) return;
 
   const text =
-    `\u2705 \u041E\u043F\u043B\u0430\u0442\u0430 \u043F\u0456\u0434\u0442\u0432\u0435\u0440\u0434\u0436\u0435\u043D\u0430!\n\n` +
-    `\u{1F464} ID: ${tgId}\n` +
-    `\u{1F4DD} Username: @${username || "\u043D\u0435\u0432\u0456\u0434\u043E\u043C\u043E"}\n` +
-    `\u{1F4B0} \u0421\u0443\u043C\u0430: ${amount} \u20B4\n` +
-    `\u{1F3AE} Player ID: ${playerId}`;
+    `✅ Оплата підтверджена!\n\n` +
+    `👤 ID: ${tgId}\n` +
+    `📝 Username: @${username || "невідомо"}\n` +
+    `💰 Сума: ${amount} ₴\n` +
+    `🎮 Player ID: ${playerId}\n` +
+    `📅 Дата: ${dateStr || new Date().toLocaleString("uk-UA", { timeZone: "Europe/Kyiv", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}`;
 
   for (const modId of moderatorIds) {
     try {
