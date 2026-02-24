@@ -343,18 +343,20 @@ async function showStep3(chatId: number) {
 
   if (step3Media) {
     const source = resolveMediaSource(step3Media);
-    const isImage = /\.(jpg|jpeg|png|gif|webp)/i.test(step3Media);
-    try {
-      if (isImage) {
-        const fileOpts = getFileOptions(step3Media);
-        await bot!.sendPhoto(chatId, source, { caption: bonusText, reply_markup: inlineMarkup }, { ...fileOpts });
-      } else {
-        const fileOpts = getFileOptions(step3Media);
-        await bot!.sendVideo(chatId, source, { caption: bonusText, reply_markup: inlineMarkup }, { ...fileOpts });
+    if (source) {
+      const isImage = /\.(jpg|jpeg|png|gif|webp)/i.test(step3Media);
+      try {
+        if (isImage) {
+          const fileOpts = getFileOptions(step3Media);
+          await bot!.sendPhoto(chatId, source, { caption: bonusText, reply_markup: inlineMarkup }, { ...fileOpts });
+        } else {
+          const fileOpts = getFileOptions(step3Media);
+          await bot!.sendVideo(chatId, source, { caption: bonusText, reply_markup: inlineMarkup }, { ...fileOpts });
+        }
+        return;
+      } catch (e) {
+        log(`Failed to send step3 media: ${e}`, "bot");
       }
-      return;
-    } catch (e) {
-      log(`Failed to send step3 media: ${e}`, "bot");
     }
   }
 
