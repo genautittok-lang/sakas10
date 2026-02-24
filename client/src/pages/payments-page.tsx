@@ -39,6 +39,7 @@ function formatAmount(amount: number): string {
 export default function PaymentsPage() {
   const { data: payments, isLoading } = useQuery<Payment[]>({
     queryKey: ["/api/payments"],
+    refetchInterval: 5000,
   });
   const { toast } = useToast();
   const [statusFilter, setStatusFilter] = useState("all");

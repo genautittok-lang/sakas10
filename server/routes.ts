@@ -317,31 +317,40 @@ export async function registerRoutes(
 
   app.post("/api/payments/webhook", async (req, res) => {
     try {
+      console.log("[webhook] Incoming request body:", JSON.stringify(req.body));
+      console.log("[webhook] Headers:", JSON.stringify({ secret: req.get("X-Webhook-Secret"), query: req.query.secret }));
+
       const secretFromHeader = req.get("X-Webhook-Secret");
       const secretFromQuery = req.query.secret as string | undefined;
       const providedSecret = secretFromHeader || secretFromQuery;
 
       if (!providedSecret) {
+        console.log("[webhook] Rejected: no secret provided");
         return res.status(403).json({ message: "Webhook secret required" });
       }
 
       const configuredSecret = await storage.getConfig("convert2pay_secret_key");
       if (!configuredSecret || providedSecret !== configuredSecret) {
+        console.log("[webhook] Rejected: invalid secret");
         return res.status(403).json({ message: "Invalid webhook secret" });
       }
 
       const { payment_id, invoice_id, status: webhookStatus } = req.body;
+      console.log(`[webhook] payment_id=${payment_id} invoice_id=${invoice_id} status=${webhookStatus}`);
 
       let payment = null;
       if (payment_id) {
         payment = await storage.getPayment(payment_id);
-      } else if (invoice_id) {
+      }
+      if (!payment && invoice_id) {
         payment = await storage.getPaymentByInvoice(invoice_id);
       }
 
       if (!payment) {
+        console.log(`[webhook] Payment not found for payment_id=${payment_id} invoice_id=${invoice_id}`);
         return res.status(404).json({ message: "Payment not found" });
       }
+      console.log(`[webhook] Found payment id=${payment.id} current_status=${payment.status}`);
 
       let newStatus = "pending";
       if (webhookStatus === "success" || webhookStatus === "paid" || webhookStatus === "completed") {
@@ -352,7 +361,9 @@ export async function registerRoutes(
         newStatus = "processing";
       }
 
+      console.log(`[webhook] Updating payment ${payment.id} to status: ${newStatus}`);
       const updated = await storage.updatePaymentStatus(payment.id, newStatus);
+      console.log(`[webhook] Update result: ${updated ? "success" : "failed"}`);
 
       const webhookNow = new Date();
       const webhookDateStr = webhookNow.toLocaleString("uk-UA", { timeZone: "Europe/Kyiv", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
@@ -361,12 +372,15 @@ export async function registerRoutes(
         await sendMessageToUser(updated.tgId,
           `✅ Оплата підтверджена!\n\n💰 Сума: ${updated.amount} ₴\n🎮 Player ID: ${updated.playerId}\n📅 Дата: ${webhookDateStr}`);
         await notifyManagerPayment(updated.tgId, user?.username || null, updated.amount, updated.playerId, webhookDateStr);
+        console.log(`[webhook] Notifications sent for paid payment ${updated.id} tgId=${updated.tgId}`);
       } else if (newStatus === "cancelled" && updated) {
         await sendMessageToUser(updated.tgId,
           `❌ Оплата не пройшла / скасована.\n\nЯкщо це помилка — спробуйте ще раз або зверніться до підтримки.`);
+        console.log(`[webhook] Cancellation notification sent for payment ${updated.id} tgId=${updated.tgId}`);
       } else if (newStatus === "processing" && updated) {
         await sendMessageToUser(updated.tgId,
           `⏳ Ваш платіж знаходиться в обробці.\n\nБудь ласка, зачекайте кілька хвилин і перевірте статус ще раз.`);
+        console.log(`[webhook] Processing notification sent for payment ${updated.id} tgId=${updated.tgId}`);
       }
 
       res.json({ success: true });
