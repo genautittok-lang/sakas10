@@ -66,6 +66,7 @@ const STEPS: StepDefinition[] = [
     title: "Крок 3: Бонус",
     fields: [
       { key: "bonus_text", label: "Текст бонусу", type: "textarea", placeholder: "Крок 3: Бонус" },
+      { key: "step3_video", label: "Відео або фото бонусу", type: "video", placeholder: "https://example.com/bonus.mp4" },
     ],
   },
 ];

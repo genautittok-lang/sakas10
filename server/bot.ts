@@ -338,10 +338,28 @@ async function showStep3(chatId: number) {
   bottomRow.push({ text: "\u{1F3E0} \u0413\u043E\u043B\u043E\u0432\u043D\u0430", callback_data: "go_home" });
   step3Keyboard.push(bottomRow);
 
+  const step3Media = await getConfigValue("step3_video", "");
+  const inlineMarkup = { inline_keyboard: step3Keyboard };
+
+  if (step3Media) {
+    const source = resolveMediaSource(step3Media);
+    const isImage = /\.(jpg|jpeg|png|gif|webp)/i.test(step3Media);
+    try {
+      if (isImage) {
+        const fileOpts = getFileOptions(step3Media);
+        await bot!.sendPhoto(chatId, source, { caption: bonusText, reply_markup: inlineMarkup }, { ...fileOpts });
+      } else {
+        const fileOpts = getFileOptions(step3Media);
+        await bot!.sendVideo(chatId, source, { caption: bonusText, reply_markup: inlineMarkup }, { ...fileOpts });
+      }
+      return;
+    } catch (e) {
+      log(`Failed to send step3 media: ${e}`, "bot");
+    }
+  }
+
   await bot!.sendMessage(chatId, bonusText, {
-    reply_markup: {
-      inline_keyboard: step3Keyboard,
-    },
+    reply_markup: inlineMarkup,
   });
 }
 
@@ -520,6 +538,24 @@ export function startBot() {
 
   bot = new TelegramBot(token, { polling: true });
   log("Telegram bot started", "bot");
+
+  bot.setMyCommands([
+    { command: "start", description: "Перезапуск бота" },
+    { command: "operator", description: "Оператор 24/7" },
+  ]).catch((e) => log(`Failed to set bot commands: ${e}`, "bot"));
+
+  bot.onText(/\/operator/, async (msg) => {
+    const chatId = msg.chat.id;
+    const tgId = String(msg.from?.id);
+    userManagerState.set(tgId, true);
+    await bot!.sendMessage(chatId, "💬 Напишіть вашу проблему, і оператор відповість вам найближчим часом.", {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: "❌ Скасувати", callback_data: "cancel_manager_msg" }],
+        ],
+      },
+    });
+  });
 
   bot.onText(/\/start/, async (msg) => {
     const chatId = msg.chat.id;
