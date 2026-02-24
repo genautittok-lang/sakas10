@@ -538,8 +538,28 @@ export function startBot() {
     return null;
   }
 
-  bot = new TelegramBot(token, { polling: true });
+  bot = new TelegramBot(token, {
+    polling: {
+      interval: 1000,
+      autoStart: true,
+      params: { timeout: 10, allowed_updates: [] },
+    },
+  });
   log("Telegram bot started", "bot");
+
+  bot.on("polling_error", (err: any) => {
+    const code = err?.code || "";
+    const message = err?.message || "";
+    if (message.includes("409") || code === "ETELEGRAM" && message.includes("Conflict")) {
+      log("409 Conflict: another bot instance detected. Restarting polling in 5s...", "bot");
+      bot?.stopPolling().catch(() => {});
+      setTimeout(() => {
+        bot?.startPolling({ restart: true }).catch((e: any) => log(`Polling restart failed: ${e}`, "bot"));
+      }, 5000);
+    } else {
+      log(`Polling error: ${message}`, "bot");
+    }
+  });
 
   bot.setMyCommands([
     { command: "start", description: "Перезапуск бота" },
