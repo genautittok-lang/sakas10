@@ -76,18 +76,11 @@ export async function initDatabase() {
   `);
 
   await db.execute(sql`
-    CREATE TABLE IF NOT EXISTS users (
+    CREATE TABLE IF NOT EXISTS admin_users (
       id VARCHAR PRIMARY KEY DEFAULT gen_random_uuid(),
       username TEXT NOT NULL UNIQUE,
       password TEXT NOT NULL
     );
-  `);
-
-  await db.execute(sql`
-    DO $$ BEGIN
-      ALTER TABLE users ADD COLUMN password TEXT NOT NULL DEFAULT '';
-    EXCEPTION WHEN duplicate_column THEN null;
-    END $$;
   `);
 
   console.log("Database tables initialized successfully.");

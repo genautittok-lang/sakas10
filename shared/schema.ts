@@ -70,7 +70,7 @@ export type InsertManagerMessage = z.infer<typeof insertManagerMessageSchema>;
 export type MessageReply = typeof messageReplies.$inferSelect;
 export type InsertMessageReply = z.infer<typeof insertMessageReplySchema>;
 
-export const users = pgTable("users", {
+export const users = pgTable("admin_users", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
