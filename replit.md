@@ -106,12 +106,15 @@ Manager (set via `manager_chat_id` in Settings) has admin commands in Telegram:
 - `npm run build` - Builds client (Vite) and server (esbuild) into `dist/`
 - `npm run start` - Runs production server from `dist/index.cjs`
 - `railway.toml` - Railway deployment config (nixpacks builder, healthcheck on /api/stats)
+- Sessions stored in PostgreSQL via `connect-pg-simple` (table: `user_sessions`, auto-created)
+- `trust proxy` enabled for correct cookie handling behind Railway's proxy
 
 ### Required Environment Variables for Railway
 1. `DATABASE_URL` - PostgreSQL connection string (Railway Postgres addon)
 2. `TELEGRAM_BOT_TOKEN` - Bot token from @BotFather
 3. `PUBLIC_BASE_URL` - Your Railway deployment URL (e.g., https://your-app.up.railway.app)
 4. `PORT` - Auto-set by Railway
+5. `SESSION_SECRET` - Secret for signing session cookies (recommended for production)
 
 ## Recent Changes (2026-02-22)
 - Added "Вступити в клуб" button with configurable link in bot welcome

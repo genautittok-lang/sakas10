@@ -9,6 +9,8 @@ import { randomUUID } from "crypto";
 import fs from "fs";
 import express from "express";
 import session from "express-session";
+import connectPgSimple from "connect-pg-simple";
+import { Pool } from "pg";
 import bcrypt from "bcryptjs";
 
 declare module "express-session" {
@@ -122,19 +124,37 @@ export async function registerRoutes(
 
   app.set("trust proxy", 1);
 
-  app.use(
-    session({
-      secret: process.env.SESSION_SECRET || "fallback-secret-change-me",
-      resave: false,
-      saveUninitialized: false,
-      cookie: {
-        secure: process.env.NODE_ENV === "production",
-        httpOnly: true,
-        sameSite: "lax",
-        maxAge: 24 * 60 * 60 * 1000,
-      },
-    })
-  );
+  const isProduction = process.env.NODE_ENV === "production";
+
+  if (isProduction && !process.env.SESSION_SECRET) {
+    console.warn("WARNING: SESSION_SECRET not set in production. Using fallback secret.");
+  }
+
+  const sessionConfig: session.SessionOptions = {
+    secret: process.env.SESSION_SECRET || "fallback-secret-change-me",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: isProduction,
+      httpOnly: true,
+      sameSite: "lax",
+      maxAge: 24 * 60 * 60 * 1000,
+    },
+  };
+
+  if (process.env.DATABASE_URL) {
+    const PgStore = connectPgSimple(session);
+    const sessionPool = new Pool({
+      connectionString: process.env.DATABASE_URL,
+    });
+    sessionConfig.store = new PgStore({
+      pool: sessionPool,
+      tableName: "user_sessions",
+      createTableIfMissing: true,
+    });
+  }
+
+  app.use(session(sessionConfig));
 
   app.use(requireAuth);
 
