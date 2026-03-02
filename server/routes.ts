@@ -124,6 +124,8 @@ export async function registerRoutes(
 
   app.set("trust proxy", 1);
 
+  await initDatabase();
+
   const isProduction = process.env.NODE_ENV === "production";
 
   if (isProduction && !process.env.SESSION_SECRET) {
@@ -150,7 +152,6 @@ export async function registerRoutes(
     sessionConfig.store = new PgStore({
       pool: sessionPool,
       tableName: "user_sessions",
-      createTableIfMissing: true,
     });
   }
 
@@ -178,7 +179,6 @@ export async function registerRoutes(
     },
   }));
 
-  await initDatabase();
   startBot();
   try {
     await seedDefaults();

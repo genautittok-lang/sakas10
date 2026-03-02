@@ -83,6 +83,19 @@ export async function initDatabase() {
     );
   `);
 
+  await db.execute(sql`
+    CREATE TABLE IF NOT EXISTS user_sessions (
+      sid VARCHAR NOT NULL COLLATE "default",
+      sess JSON NOT NULL,
+      expire TIMESTAMP(6) NOT NULL,
+      CONSTRAINT user_sessions_pkey PRIMARY KEY (sid)
+    );
+  `);
+
+  await db.execute(sql`
+    CREATE INDEX IF NOT EXISTS idx_user_sessions_expire ON user_sessions (expire);
+  `);
+
   console.log("Database tables initialized successfully.");
 
   await db.execute(sql`DELETE FROM message_replies WHERE message_id IN (SELECT id FROM manager_messages WHERE tg_id IN ('100001','100002','100003','100004'))`);

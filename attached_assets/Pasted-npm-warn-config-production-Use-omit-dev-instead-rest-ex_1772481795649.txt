@@ -1,0 +1,43 @@
+npm warn config production Use `--omit=dev` instead.
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.cjs
+Initializing database tables...
+Database tables initialized successfully.
+Demo data cleanup completed.
+8:02:05 PM [bot] Telegram bot started
+Default admin user created (admin / admin123)
+Total admin user(s): 1
+8:02:05 PM [express] serving on port 8080
+Starting Container
+8:02:13 PM [bot] 409 Conflict: another bot instance detected. Restarting polling in 5s...
+8:02:21 PM [express] GET /api/stats 200 in 180ms :: {"totalUsers":111,"stepCounts":{"HOME":80,"STEP_1":0,"STEP_2":14,"STEP_3":13,"PAYMENT":4},"bonusClaimed":1,"totalPayments":42,"paidCount":1,"totalRevenue":5000,"pendingMessages":2,"pendingPayments":0}
+8:02:27 PM [bot] 409 Conflict: another bot instance detected. Restarting polling in 5s...
+8:02:40 PM [bot] 409 Conflict: another bot instance detected. Restarting polling in 5s...
+8:02:49 PM [express] GET /api/auth/status 304 in 1ms :: {"authenticated":false}
+8:02:53 PM [express] POST /api/auth/login 200 in 244ms :: {"success":true,"username":"admin"}
+  path: '/app/dist/table.sql'
+}
+Error: ENOENT: no such file or directory, open '/app/dist/table.sql'
+Internal Server Error: [Error: ENOENT: no such file or directory, open '/app/dist/table.sql'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+8:02:53 PM [express] GET /api/auth/status 304 in 1ms :: {"authenticated":false}
+}
+Error: ENOENT: no such file or directory, open '/app/dist/table.sql'
+8:02:56 PM [express] POST /api/auth/login 200 in 66ms :: {"success":true,"username":"admin"}
+Internal Server Error: [Error: ENOENT: no such file or directory, open '/app/dist/table.sql'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/app/dist/table.sql'
+8:02:56 PM [express] GET /api/auth/status 304 in 1ms :: {"authenticated":false}
+  path: '/app/dist/table.sql'
+}
+Error: ENOENT: no such file or directory, open '/app/dist/table.sql'
+8:02:56 PM [express] POST /api/auth/login 200 in 62ms :: {"success":true,"username":"admin"}
+Internal Server Error: [Error: ENOENT: no such file or directory, open '/app/dist/table.sql'] {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+8:02:56 PM [express] GET /api/auth/status 304 in 1ms :: {"authenticated":false}
