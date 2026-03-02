@@ -83,6 +83,13 @@ export async function initDatabase() {
     );
   `);
 
+  await db.execute(sql`
+    DO $$ BEGIN
+      ALTER TABLE users ADD COLUMN password TEXT NOT NULL DEFAULT '';
+    EXCEPTION WHEN duplicate_column THEN null;
+    END $$;
+  `);
+
   console.log("Database tables initialized successfully.");
 
   await db.execute(sql`DELETE FROM message_replies WHERE message_id IN (SELECT id FROM manager_messages WHERE tg_id IN ('100001','100002','100003','100004'))`);

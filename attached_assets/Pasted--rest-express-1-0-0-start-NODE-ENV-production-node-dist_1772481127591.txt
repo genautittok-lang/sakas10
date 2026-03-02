@@ -1,0 +1,89 @@
+> rest-express@1.0.0 start
+> NODE_ENV=production node dist/index.cjs
+npm warn config production Use `--omit=dev` instead.
+Initializing database tables...
+Database tables initialized successfully.
+Demo data cleanup completed.
+7:47:38 PM [bot] Telegram bot started
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3716',
+  routine: 'errorMissingColumn'
+}
+Seed defaults error: error: column "password" does not exist
+    at /app/dist/index.cjs:68:13356
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async /app/dist/index.cjs:365:31480
+    at async g4.getUserByUsername (/app/dist/index.cjs:365:104150)
+    at async o8e (/app/dist/index.cjs:543:969)
+    at async CG (/app/dist/index.cjs:543:2415)
+    at async /app/dist/index.cjs:561:3910 {
+  length: 108,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '26',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+7:47:39 PM [express] serving on port 8080
+Starting Container
+7:47:39 PM [express] GET /api/stats 200 in 34ms :: {"totalUsers":110,"stepCounts":{"HOME":79,"STEP_1":0,"STEP_2":14,"STEP_3":13,"PAYMENT":4},"bonusClaimed":1,"totalPayments":42,"paidCount":1,"totalRevenue":5000,"pendingMessages":2,"pendingPayments":0}
+7:47:47 PM [bot] 409 Conflict: another bot instance detected. Restarting polling in 5s...
+  line: '3716',
+  routine: 'errorMissingColumn'
+}
+7:51:37 PM [express] POST /api/auth/login 500 in 205ms :: {"message":"column \"password\" does not exist"}
+7:51:33 PM [express] GET /api/auth/status 200 in 1ms :: {"authenticated":false}
+Internal Server Error: error: column "password" does not exist
+    at /app/dist/index.cjs:68:13356
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async /app/dist/index.cjs:365:31480
+    at async g4.getUserByUsername (/app/dist/index.cjs:365:104150)
+    at async /app/dist/index.cjs:543:2641 {
+  length: 108,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '26',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+Internal Server Error: error: column "password" does not exist
+    at /app/dist/index.cjs:68:13356
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async /app/dist/index.cjs:365:31480
+    at async g4.getUserByUsername (/app/dist/index.cjs:365:104150)
+    at async /app/dist/index.cjs:543:2641 {
+  length: 108,
+  severity: 'ERROR',
+  code: '42703',
+  detail: undefined,
+  hint: undefined,
+  position: '26',
+  internalPosition: undefined,
+  internalQuery: undefined,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  column: undefined,
+  dataType: undefined,
+  constraint: undefined,
+  file: 'parse_relation.c',
+  line: '3716',
+  routine: 'errorMissingColumn'
+}
+7:51:46 PM [express] POST /api/auth/login 500 in 166ms :: {"message":"column \"password\" does not exist"}
+7:51:50 PM [express] GET /api/auth/status 304 in 1ms :: {"authenticated":false}
